@@ -1,17 +1,33 @@
 package io.scicast.streamesh.server;
 
 import io.scicast.streamesh.core.CallableDefinition;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import io.scicast.streamesh.core.StreameshOrchestrator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Set;
 
 @RestController
 public class DeploymentController {
 
-    @PostMapping(value = "/definitions", consumes = "application/x-yaml")
-    public void applyDefinition(@RequestBody CallableDefinition definition) {
+    @Autowired
+    private StreameshOrchestrator orchestrator;
 
+    @PostMapping(value = "/definitions", consumes = "application/x-yaml", produces = "application/json")
+    public ResponseEntity applyDefinition(@RequestBody CallableDefinition definition) {
+        String definitionId = orchestrator.applyDefinition(definition);
+        return ResponseEntity.ok(definitionId);
     }
 
+    @GetMapping(value = "/definitions", produces = "application/json")
+    public ResponseEntity<Set<CallableDefinition>> getDefinitions() {
+        return ResponseEntity.ok(orchestrator.getDefinitions());
+    }
+
+    @GetMapping(value = "/definitions/{id}", produces = "application/json")
+    public ResponseEntity<CallableDefinition> getDefinitionById(@PathVariable String id) {
+        return ResponseEntity.ok(orchestrator.getDefinition(id));
+    }
 
 }

@@ -18,5 +18,5 @@ public interface StreameshOrchestrator {
 
     JobDescriptor scheduleJob(String definitionId, JobInput input);
 
-    OutputHandle getOutput(String jobDescriptorId);
+    OutputHandle getJobOutput(String jobDescriptorId);
 }
