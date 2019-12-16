@@ -1,4 +1,4 @@
 package io.scicast.streamesh.core;
 
-public class InputDescriptor {
+public class JobInput {
 }
