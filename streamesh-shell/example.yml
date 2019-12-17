@@ -1,0 +1,4 @@
+name: example-svc-2
+image: "example-svc:latest"
+inputMapping:
+  baseCmd: java -jar

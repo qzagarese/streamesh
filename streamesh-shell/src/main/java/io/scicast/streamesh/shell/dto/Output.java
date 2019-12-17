@@ -1,13 +1,14 @@
-package io.scicast.streamesh.core;
+package io.scicast.streamesh.shell.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Builder
 @Getter
-@With
-@NoArgsConstructor
 @AllArgsConstructor
-public class OutputMapping {
+@NoArgsConstructor
+public class Output {
+
 
     private OutputLocationType locationType = OutputLocationType.STDOUT;
     private String outputFilePath;

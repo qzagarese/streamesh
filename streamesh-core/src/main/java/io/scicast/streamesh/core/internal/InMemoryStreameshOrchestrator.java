@@ -1,7 +1,6 @@
 package io.scicast.streamesh.core.internal;
 
 import io.scicast.streamesh.core.*;
-import io.scicast.streamesh.core.exception.DuplicateDefinitionException;
 import io.scicast.streamesh.core.exception.NotFoundException;
 
 import java.util.*;
@@ -11,7 +10,6 @@ import java.util.stream.StreamSupport;
 
 public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
 
-    public static final String DUPLICATE_DEFINITION_MSG = "Definition with name %s already present. Please choose a different name.";
     private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
 
     private OrchestrationDriver driver;
@@ -34,8 +32,9 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
 
     public String applyDefinition(CallableDefinition definition) {
 
-        if(!definitionsByName.get(definition.getName()).equals(null)) {
-            throw new DuplicateDefinitionException(String.format(DUPLICATE_DEFINITION_MSG, definition.getName()));
+        CallableDefinition referencedDefinition = definitionsByName.get(definition.getName());
+        if(referencedDefinition != null) {
+            removeDefinition(referencedDefinition.getId());
         }
 
         String imageId = driver.retrieveContainerImage(definition.getImage());
@@ -52,6 +51,14 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
         CallableDefinition definition = definitions.get(id);
         if(definition == null) {
             throw new NotFoundException(String.format("No definition with id %s found", id));
+        }
+        return definition;
+    }
+
+    public CallableDefinition getDefinitionByName(String name) {
+        CallableDefinition definition = definitionsByName.get(name);
+        if(definition == null) {
+            throw new NotFoundException(String.format("No definition found for name %s", name));
         }
         return definition;
     }

@@ -30,4 +30,9 @@ public class DeploymentController {
         return ResponseEntity.ok(orchestrator.getDefinition(id));
     }
 
+    @GetMapping(value = "/definitions/by-name/{name}", produces = "application/json")
+    public ResponseEntity<CallableDefinition> getDefinitionByName(@PathVariable String name) {
+        return ResponseEntity.ok(orchestrator.getDefinitionByName(name));
+    }
+
 }

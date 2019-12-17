@@ -8,6 +8,8 @@ public interface StreameshOrchestrator {
 
     CallableDefinition getDefinition(String id);
 
+    CallableDefinition getDefinitionByName(String name);
+
     void removeDefinition(String id);
 
     Set<CallableDefinition> getDefinitions();

@@ -1,12 +1,14 @@
 package io.scicast.streamesh.core;
 
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 import java.util.List;
 
 @Builder
 @Getter
+@With
+@NoArgsConstructor
+@AllArgsConstructor
 public class InputMapping {
 
     private String baseCmd;
