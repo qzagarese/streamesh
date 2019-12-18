@@ -2,7 +2,9 @@ package io.scicast.streamesh.server;
 
 import io.scicast.streamesh.core.CallableDefinition;
 import io.scicast.streamesh.core.StreameshOrchestrator;
+import io.scicast.streamesh.core.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +35,12 @@ public class DeploymentController {
     @GetMapping(value = "/definitions/by-name/{name}", produces = "application/json")
     public ResponseEntity<CallableDefinition> getDefinitionByName(@PathVariable String name) {
         return ResponseEntity.ok(orchestrator.getDefinitionByName(name));
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(NotFoundException.class)
+    public void handleNotFound() {
+
     }
 
 }

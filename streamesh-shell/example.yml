@@ -1,4 +1,4 @@
-name: example-svc-2
-image: "example-svc:latest"
+name: example-svc-21
+image: "busybox:latest"
 inputMapping:
   baseCmd: java -jar
