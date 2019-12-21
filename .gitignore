@@ -2,3 +2,6 @@
 *.idea
 *.iml
 */*spring-shell.log
+test.txt
+test_copy.txt
+

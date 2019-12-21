@@ -1,5 +1,6 @@
 package io.scicast.streamesh.core;
 
+import java.util.Map;
 import java.util.Set;
 
 public interface StreameshOrchestrator {
@@ -18,7 +19,7 @@ public interface StreameshOrchestrator {
 
     Set<JobDescriptor> getJobsByDefinition(String definitionId);
 
-    JobDescriptor scheduleJob(String definitionId, JobInput input);
+    JobDescriptor scheduleJob(String definitionId, Map<?, ?> input);
 
     OutputHandle getJobOutput(String jobDescriptorId);
 }

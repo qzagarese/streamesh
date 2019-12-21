@@ -22,6 +22,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @ShellComponent
@@ -32,13 +33,14 @@ public class DeploymentCommands {
     private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @ShellMethod(value = "Sends a new service definition to Streamesh Server", key = "apply")
-    public String applyDefinition(@ShellOption(value = "-d") String definitionPath) throws FileNotFoundException {
+    public String applyDefinition(@ShellOption(value = "-d") String definitionPath) throws FileNotFoundException, JsonProcessingException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(new File(definitionPath))));
         String definitionBody = reader.lines().collect(Collectors.joining("\n"));
         RestClient client = new RestClient(System.getProperty(Constants.SERVER_URL_PROPERTY, Constants.SERVER_URL_DEFAULT));
         ResponseEntity<String> stringResponseEntity = client.postYaml("/definitions", definitionBody);
-
-        return "";
+        Map<?, ?> responseBody = mapper.readerFor(new TypeReference<Map<?, ?>>() {
+        }).readValue(stringResponseEntity.getBody());
+        return "Definition deployed. Id: " + responseBody.get("definitionId");
     }
 
     @ShellMethod(value = "Lists the currently deployed services.", key = "get-services")

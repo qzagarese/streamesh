@@ -10,9 +10,10 @@ import lombok.*;
 public class OutputMapping {
 
     private OutputLocationType locationType = OutputLocationType.STDOUT;
-    private String outputFilePath;
+    private String outputDir;
+    private String outputFileName;
 
-    enum OutputLocationType {
+    public enum OutputLocationType {
 
         STDOUT, FILE_SYSTEM;
 

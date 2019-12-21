@@ -84,8 +84,12 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
         return null;
     }
 
-    public JobDescriptor scheduleJob(String definitionId, JobInput input) {
-        return null;
+    public JobDescriptor scheduleJob(String definitionId, Map<?, ?> input) {
+        CallableDefinition definition = getDefinition(definitionId);
+        return driver.scheduleJob(definition.getImage(),
+                definition.getInputMapping().getBaseCmd(),
+                definition.getOutputMapping(),
+                desc -> System.out.println("Status updated"));
     }
 
     public OutputHandle getJobOutput(String jobDescriptorId) {

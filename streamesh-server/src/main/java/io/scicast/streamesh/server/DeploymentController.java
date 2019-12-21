@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -17,9 +19,11 @@ public class DeploymentController {
     private StreameshOrchestrator orchestrator;
 
     @PostMapping(value = "/definitions", consumes = "application/x-yaml", produces = "application/json")
-    public ResponseEntity applyDefinition(@RequestBody CallableDefinition definition) {
+    public ResponseEntity<Map<?, ?>> applyDefinition(@RequestBody CallableDefinition definition) {
         String definitionId = orchestrator.applyDefinition(definition);
-        return ResponseEntity.ok(definitionId);
+        HashMap<Object, Object> result = new HashMap<>();
+        result.put("definitionId", definitionId);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping(value = "/definitions", produces = "application/json")

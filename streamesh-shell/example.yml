@@ -1,4 +1,8 @@
 name: example-svc-21
-image: "busybox:latest"
+image: "python-sample:latest"
 inputMapping:
-  baseCmd: java -jar
+  baseCmd: python /usr/test_script.py
+outputMapping:
+  locationType: FILE_SYSTEM
+  outputDir: /usr
+  outputFileName: new_purchases.csv
