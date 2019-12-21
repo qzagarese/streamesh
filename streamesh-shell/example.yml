@@ -4,5 +4,7 @@ inputMapping:
   baseCmd: python /usr/test_script.py
 outputMapping:
   locationType: FILE_SYSTEM
-  outputDir: /usr
+  outputDir: /tmp
   outputFileName: new_purchases.csv
+
+

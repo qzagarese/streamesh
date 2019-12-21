@@ -15,9 +15,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -28,6 +25,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
     public static final String TMP_DIR_PROPERTY = "java.io.tmpdir";
     public static final String STREAMESH_DIR = "streamesh";
     public static final String OUTPUT_FILE_NAME = "output";
+    public static final String TMP = "/tmp/";
     private Logger logger = Logger.getLogger(getClass().getName());
     private DockerClient client = DockerClientProviderFactory.create().getClient();
 
@@ -68,10 +66,10 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         updateListeners.put(descriptor.getId(), onStatusUpdate);
 
 
-        String hostOutputFilePath = createOutputFile(descriptor.getId());
+        String hostOutputDirPath = createOutputDirectory(descriptor.getId());
 
 
-        String redirectedContainerOutputPath = "/tmp/" + OUTPUT_FILE_NAME;
+        String redirectedContainerOutputPath = TMP + OUTPUT_FILE_NAME;
         if(outputMapping.getLocationType().equals(OutputMapping.OutputLocationType.STDOUT)) {
             command += " > " + redirectedContainerOutputPath;
         }
@@ -79,9 +77,9 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         CreateContainerCmd create = client.createContainerCmd(image);
         create = create.withCmd(command.split(" "));
         String containerOutputPath = outputMapping.getLocationType().equals(OutputMapping.OutputLocationType.STDOUT)
-                ? redirectedContainerOutputPath
-                : outputMapping.getOutputDir() + File.separator + outputMapping.getOutputFileName();
-        create = setupOutputVolume(create, hostOutputFilePath, containerOutputPath);
+                ? TMP
+                : outputMapping.getOutputDir();
+        create = setupOutputVolume(create, hostOutputDirPath, containerOutputPath);
         CreateContainerResponse createContainerResponse = create.exec();
         descriptor = descriptor.withContainerId(createContainerResponse.getId());
         StartContainerCmd start = client.startContainerCmd(createContainerResponse.getId());
@@ -102,7 +100,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         return cmd.withHostConfig(hc);
     }
 
-    private String createOutputFile(String jobId) {
+    private String createOutputDirectory(String jobId) {
         File dir = new File(System.getProperty(TMP_DIR_PROPERTY)
                 + File.separator
                 + STREAMESH_DIR
@@ -113,13 +111,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
             throw new RuntimeException("Could not create output directory for job " + jobId);
         }
 
-        File outputFile = new File(dir, OUTPUT_FILE_NAME);
-        try {
-            outputFile.createNewFile();
-        } catch (IOException e) {
-            throw new RuntimeException("Could not create output file for job " + jobId);
-        }
-        return  outputFile.getAbsolutePath();
+        return  dir.getAbsolutePath();
     }
 
     public InputStream getJobOutput(String jobId) {

@@ -18,7 +18,7 @@ data = {
 purchases = pd.DataFrame(data)
 
 #save the file to a CSV
-purchases.to_csv('new_purchases.csv', index = False)
+purchases.to_csv('/tmp/new_purchases.csv', index = False)
 
 #or JSON
 purchases.to_json('new_purchases.json')
