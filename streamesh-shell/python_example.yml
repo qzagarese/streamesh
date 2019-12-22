@@ -3,7 +3,6 @@ image: "python-sample:latest"
 inputMapping:
   baseCmd: python /usr/test_script.py
 outputMapping:
-  locationType: FILE_SYSTEM
   outputDir: /tmp
   outputFileName: new_purchases.csv
 

@@ -7,7 +7,7 @@ import com.github.dockerjava.api.model.*;
 import io.scicast.streamesh.core.JobDescriptor;
 import io.scicast.streamesh.core.OrchestrationDriver;
 import io.scicast.streamesh.core.OutputMapping;
-import io.scicast.streamesh.docker.driver.internal.ContainerTracker;
+import io.scicast.streamesh.docker.driver.internal.JobRunner;
 import io.scicast.streamesh.docker.driver.internal.DockerClientProviderFactory;
 import io.scicast.streamesh.docker.driver.internal.DockerPullStatusManager;
 
@@ -24,14 +24,12 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
 
     public static final String TMP_DIR_PROPERTY = "java.io.tmpdir";
     public static final String STREAMESH_DIR = "streamesh";
-    public static final String OUTPUT_FILE_NAME = "output";
+    public static final String OUTPUT_FILE_NAME = "output.log";
     public static final String TMP = "/tmp/";
     private Logger logger = Logger.getLogger(getClass().getName());
     private DockerClient client = DockerClientProviderFactory.create().getClient();
 
-    private Map<String, JobDescriptor> jobs = new HashMap<>();
-    private Map<String, ContainerTracker> containers = new HashMap<>();
-    private Map<String, Consumer<JobDescriptor>> updateListeners = new HashMap<>();
+    private Map<String, JobOutputManager> outputManagers = new HashMap<>();
 
     public String retrieveContainerImage(String imageName) {
         CompletableFuture<String> respFut = new CompletableFuture<>();
@@ -63,31 +61,33 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         JobDescriptor descriptor = JobDescriptor.builder()
                 .id(UUID.randomUUID().toString())
                 .build();
-        updateListeners.put(descriptor.getId(), onStatusUpdate);
-
-
         String hostOutputDirPath = createOutputDirectory(descriptor.getId());
-
-
-        String redirectedContainerOutputPath = TMP + OUTPUT_FILE_NAME;
-        if(outputMapping.getLocationType().equals(OutputMapping.OutputLocationType.STDOUT)) {
-            command += " > " + redirectedContainerOutputPath;
-        }
 
         CreateContainerCmd create = client.createContainerCmd(image);
         create = create.withCmd(command.split(" "));
-        String containerOutputPath = outputMapping.getLocationType().equals(OutputMapping.OutputLocationType.STDOUT)
-                ? TMP
-                : outputMapping.getOutputDir();
-        create = setupOutputVolume(create, hostOutputDirPath, containerOutputPath);
+        create = setupOutputVolume(create, hostOutputDirPath, outputMapping.getOutputDir());
+
         CreateContainerResponse createContainerResponse = create.exec();
         descriptor = descriptor.withContainerId(createContainerResponse.getId());
-        StartContainerCmd start = client.startContainerCmd(createContainerResponse.getId());
-        start.exec();
 
+        JobOutputManager manager = new JobOutputManager(hostOutputDirPath + File.separator + outputMapping.getOutputFileName());
+        outputManagers.put(descriptor.getId(), manager);
 
+        JobRunner runner = new JobRunner(client, descriptor, jd -> {
+            onStatusUpdate.accept(this.handleUpdate(jd));
+        });
+        runner.init();
         return descriptor;
     }
+
+    private JobDescriptor handleUpdate(JobDescriptor descriptor) {
+        if (descriptor.getStatus().equals(JobDescriptor.JobStatus.COMPLETE)) {
+//            JobOutputManager manager = outputManagers.get(descriptor.getId());
+//            manager.notifyTermination();
+        }
+        return descriptor;
+    }
+
 
     private CreateContainerCmd setupOutputVolume(CreateContainerCmd cmd, String hostOutputPath, String containerOutputPath) {
         List<Bind> binds = Optional.ofNullable(cmd.getHostConfig().getBinds())
@@ -115,7 +115,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
     }
 
     public InputStream getJobOutput(String jobId) {
-        return null;
+        return outputManagers.get(jobId).requestStream();
     }
 
     private String computeImageName(String cmdImageName) {

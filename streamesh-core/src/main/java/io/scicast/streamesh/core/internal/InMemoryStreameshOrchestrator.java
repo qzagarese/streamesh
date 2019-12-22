@@ -3,6 +3,7 @@ package io.scicast.streamesh.core.internal;
 import io.scicast.streamesh.core.*;
 import io.scicast.streamesh.core.exception.NotFoundException;
 
+import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -15,6 +16,8 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
     private OrchestrationDriver driver;
     private Map<String, CallableDefinition> definitions = new HashMap<>();
     private Map<String, CallableDefinition> definitionsByName = new HashMap<>();
+    private Map<String, JobDescriptor> jobs = new HashMap<>();
+    private Map<CallableDefinition, Set<JobDescriptor>> definitionToJobs = new HashMap<>();
 
     public InMemoryStreameshOrchestrator() {
         ServiceLoader<OrchestrationDriver> loader = ServiceLoader.load(OrchestrationDriver.class);
@@ -77,22 +80,50 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     public Set<JobDescriptor> getAllJobs() {
-        return null;
+        return jobs.values().stream().collect(Collectors.toSet());
     }
 
     public Set<JobDescriptor> getJobsByDefinition(String definitionId) {
-        return null;
+        return definitionToJobs.get(getDefinition(definitionId));
     }
 
     public JobDescriptor scheduleJob(String definitionId, Map<?, ?> input) {
         CallableDefinition definition = getDefinition(definitionId);
-        return driver.scheduleJob(definition.getImage(),
-                definition.getInputMapping().getBaseCmd(),
+        JobDescriptor descriptor = driver.scheduleJob(definition.getImage(),
+                buildCommand(definition, input),
                 definition.getOutputMapping(),
-                desc -> System.out.println("Status updated"));
+                desc -> updateIndexes(definition, desc));
+        updateIndexes(definition, descriptor);
+        return descriptor;
     }
 
-    public OutputHandle getJobOutput(String jobDescriptorId) {
-        return null;
+    public JobDescriptor getJob(String jobId) {
+        JobDescriptor job = jobs.get(jobId);
+        if (job == null) {
+            throw new NotFoundException(String.format("No job found for id %s", jobId));
+        }
+        return job;
+    }
+
+    private void updateIndexes(CallableDefinition definition, JobDescriptor descriptor) {
+        jobs.put(descriptor.getId(), descriptor);
+        Set<JobDescriptor> jobDescriptors = definitionToJobs.get(definition);
+        if (jobDescriptors == null) {
+            jobDescriptors = new HashSet<>();
+        } else {
+            jobDescriptors.remove(descriptor);
+            jobDescriptors.add(descriptor);
+        }
+        definitionToJobs.put(definition, jobDescriptors);
+    }
+
+    private String buildCommand(CallableDefinition definition, Map<?, ?> input) {
+        //TODO map inputs to build the command
+        return definition.getInputMapping().getBaseCmd();
+    }
+
+    public InputStream getJobOutput(String jobDescriptorId) {
+        JobDescriptor job = getJob(jobDescriptorId);
+        return driver.getJobOutput(jobDescriptorId);
     }
 }
