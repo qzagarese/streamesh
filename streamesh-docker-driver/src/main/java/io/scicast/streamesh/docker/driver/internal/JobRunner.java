@@ -50,10 +50,8 @@ public class JobRunner {
             });
             try {
                 start.exec();
-                if(!descriptor.getStatus().equals(JobDescriptor.JobStatus.COMPLETE)) {
-                    descriptor = descriptor.withStatus(JobDescriptor.JobStatus.COMPLETE);
-                    onStatusUpdate.accept(descriptor);
-                }
+                descriptor = descriptor.withStatus(JobDescriptor.JobStatus.COMPLETE);
+                onStatusUpdate.accept(descriptor);
             } catch (Exception e) {
                descriptor = descriptor.withStatus(JobDescriptor.JobStatus.FAILED)
                        .withErrorMessage(e.getMessage());

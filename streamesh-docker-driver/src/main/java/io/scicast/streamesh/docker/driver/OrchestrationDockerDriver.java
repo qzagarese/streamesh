@@ -82,8 +82,8 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
 
     private JobDescriptor handleUpdate(JobDescriptor descriptor) {
         if (descriptor.getStatus().equals(JobDescriptor.JobStatus.COMPLETE)) {
-//            JobOutputManager manager = outputManagers.get(descriptor.getId());
-//            manager.notifyTermination();
+            JobOutputManager manager = outputManagers.get(descriptor.getId());
+            manager.notifyTermination();
         }
         return descriptor;
     }
