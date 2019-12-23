@@ -14,22 +14,19 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 import org.springframework.shell.table.Table;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
 
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static io.scicast.streamesh.shell.Constants.ERROR_STATUS_MSG;
+import static io.scicast.streamesh.shell.Constants.GENERIC_ERROR_MSG;
+
 @ShellComponent
 public class DeploymentCommands {
 
-    public static final String ERROR_STATUS_MSG = "Oops! Something went wrong while retrieving service details. Server returned status code ";
-    public static final String GENERIC_ERROR_MSG = "An error occurred while contacting the Streamesh Server.";
+
     private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @ShellMethod(value = "Sends a new service definition to Streamesh Server", key = "apply")

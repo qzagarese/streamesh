@@ -20,7 +20,7 @@ public class JobsController {
     private StreameshOrchestrator orchestrator;
 
 
-    @PostMapping(value = "/jobs/{definitionId}", consumes = "application/json", produces = "application/json")
+    @PostMapping(value = "/definitions/{definitionId}/jobs", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Map<?, ?>> postJob(@PathVariable("definitionId") String definitionId, @RequestBody Map<?, ?> jobInput) {
         JobDescriptor jobDescriptor = orchestrator.scheduleJob(definitionId, jobInput);
         Map<Object, Object> result = new HashMap<>();
