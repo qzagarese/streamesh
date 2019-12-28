@@ -124,7 +124,6 @@ public class JobOutputManager {
                 @Override
                 public void run() {
                     try {
-                        System.out.println("FinalSize is " + finalSize.get());
                         int b = pis.read();
                         readBytes.incrementAndGet();
                         this.cancel();
