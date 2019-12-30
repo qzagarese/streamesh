@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +29,11 @@ public class JobsController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping(value = "/definitions/{definitionId}/jobs")
+    public ResponseEntity<Collection<JobDescriptor>> getJobsByDefinitionId(@PathVariable("definitionId") String definitionId) {
+        return ResponseEntity.ok(orchestrator.getJobsByDefinition(definitionId));
+    }
+
     @GetMapping(value = "/jobs/{jobId}/output")
     public void getOutput(@PathVariable("jobId") String jobId, HttpServletResponse response) throws IOException {
         InputStream is = orchestrator.getJobOutput(jobId);
@@ -41,5 +47,10 @@ public class JobsController {
         response.flushBuffer();
     }
 
+
+    @GetMapping("/jobs")
+    public ResponseEntity<Collection<JobDescriptor>> getAllJobs() {
+        return ResponseEntity.ok(orchestrator.getAllJobs());
+    }
 
 }
