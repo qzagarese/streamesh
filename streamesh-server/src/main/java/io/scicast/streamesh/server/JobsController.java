@@ -38,10 +38,11 @@ public class JobsController {
     public void getOutput(@PathVariable("jobId") String jobId, HttpServletResponse response) throws IOException {
         InputStream is = orchestrator.getJobOutput(jobId);
         OutputStream os = response.getOutputStream();
-        int b = is.read();
+        byte[] buf = new byte[100 * 1024];
+        int b = is.read(buf);
         while(b != -1) {
-            os.write(b);
-            b = is.read();
+            os.write(buf, 0, b);
+            b = is.read(buf);
         }
         os.close();
         response.flushBuffer();
