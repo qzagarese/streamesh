@@ -27,7 +27,7 @@ public class SimpleDataMerger {
                 .withRegion(Regions.EU_WEST_2)
                 .build();
 
-        S3Object s3object = s3client.getObject("ic-demo-streamesh", "data/data2.csv");
+        S3Object s3object = s3client.getObject("ic-demo-streamesh", "data/manhattan.csv");
         S3ObjectInputStream inputStream = s3object.getObjectContent();
 
         BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));

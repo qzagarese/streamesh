@@ -1,11 +1,8 @@
 package io.scicast.streamesh.docker.driver;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.CompletableFuture;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -71,7 +68,7 @@ public class JobOutputManager {
                         if (fileLength > lastKnownPosition) {
                             randomAccessFile.seek(lastKnownPosition);
                             int b;
-                            while ((b = randomAccessFile.read()) != -1) {
+                            while (((b = randomAccessFile.read()) != -1) && tis.getRequestedBytes() > 0) {
                                 pos.write(b);
                             }
                             lastKnownPosition = randomAccessFile.getFilePointer();
@@ -101,8 +98,11 @@ public class JobOutputManager {
         private PipedInputStream pis;
         private AtomicLong finalSize = new AtomicLong(0);
         private AtomicLong readBytes = new AtomicLong(0);
+        private AtomicLong requestedBytes = new AtomicLong(0);
+        private Queue<CompletableFuture<Integer>> waitingReads = new LinkedList<>();
 
         private Logger logger = Logger.getLogger(getClass().getName());
+        private Runnable task;
 
         TailingStream(PipedOutputStream pos) {
             this.pos = pos;
@@ -111,34 +111,64 @@ public class JobOutputManager {
             } catch (IOException e) {
                 throw new RuntimeException("Could not initialise tailing stream.", e);
             }
+            init();
+        }
+
+        private void init() {
+            task = new Runnable() {
+                @Override
+                public void run() {
+                    int b = 0;
+                    while (! ((finalSize.get() > 0) && (readBytes.get() >= finalSize.get()) && (b == -1))) {
+                        CompletableFuture<Integer> value = waitingReads.poll();
+                        if (value != null) {
+                            try {
+                                b = pis.read();
+                                readBytes.incrementAndGet();
+//                                logger.info(String.format("%s bytes read. %s bytes requested.", readBytes.get(), requestedBytes.get()));
+                                requestedBytes.decrementAndGet();
+                                value.complete(b);
+
+                            } catch (IOException e) {
+                                if (finalSize.get() > 0 && readBytes.get() >= finalSize.get()) {
+                                    b = -1;
+                                    value.complete(b);
+                                } else {
+                                    logger.info("Data not yet available. Retrying soon...");
+                                }
+                            }
+                        }
+                    }
+                    logger.info(String.format("%s bytes read.", readBytes.get()));
+                }
+            };
+            ExecutorService svc = Executors.newSingleThreadExecutor();
+            Future<?> future = svc.submit(task);
+//            try {
+//                future.get();
+//            } catch (Exception e) {
+//                svc.shutdown();
+//            } finally {
+//                svc.shutdown();
+//            }
         }
 
         synchronized void notifyFinalSize(long size) {
             this.finalSize.set(size);
         }
 
+        synchronized long getRequestedBytes() {
+            return requestedBytes.get();
+        }
+
         @Override
         public int read() throws IOException {
+            if(requestedBytes.get() < 0) {
+                requestedBytes.set(0);
+            }
+            requestedBytes.incrementAndGet();
             CompletableFuture<Integer> value = new CompletableFuture<>();
-            TimerTask task = new TimerTask() {
-                @Override
-                public void run() {
-                    try {
-                        int b = pis.read();
-                        readBytes.incrementAndGet();
-                        this.cancel();
-                        value.complete(b);
-                    } catch (IOException e) {
-                        if (finalSize.get() > 0 && readBytes.get() >= finalSize.get()) {
-                            value.complete(-1);
-                        } else {
-                            logger.info("Could not read data. Retrying soon...");
-                        }
-                    }
-                }
-            };
-            Timer t = new Timer();
-            t.scheduleAtFixedRate(task, 0, 100);
+            waitingReads.offer(value);
             return value.join();
         }
     }
