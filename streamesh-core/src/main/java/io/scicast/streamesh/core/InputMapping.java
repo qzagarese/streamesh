@@ -2,6 +2,7 @@ package io.scicast.streamesh.core;
 
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Builder
@@ -12,6 +13,6 @@ import java.util.List;
 public class InputMapping {
 
     private String baseCmd;
-    private List<CmdParameter> parameters;
+    private List<CmdParameter> parameters = new ArrayList<>();
 
 }

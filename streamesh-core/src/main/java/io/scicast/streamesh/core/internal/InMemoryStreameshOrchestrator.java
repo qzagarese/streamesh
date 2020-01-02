@@ -141,7 +141,7 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
                                 .collect(Collectors.joining(" "));
                     }
                 }).collect(Collectors.joining(" "));
-        return inputMapping.getBaseCmd().trim() + " " + params.trim();
+        return (inputMapping.getBaseCmd().trim() + " " + params.trim()).trim();
     }
 
     public InputStream getJobOutput(String jobDescriptorId) {
