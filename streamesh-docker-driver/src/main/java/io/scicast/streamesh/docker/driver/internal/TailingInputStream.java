@@ -4,12 +4,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.util.TimerTask;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
 
 public class TailingInputStream extends InputStream {
@@ -25,7 +23,7 @@ public class TailingInputStream extends InputStream {
 
     private Runnable producerTask;
 
-    private BlockingQueue<ReadResult> blocks = new ArrayBlockingQueue<>(NUMBER_OF_BLOCKS);
+    private BlockingQueue<ReadResult> blocks = new LinkedBlockingQueue<>(NUMBER_OF_BLOCKS);
     private int readBytes = 0;
 
     public TailingInputStream(String filePath) {
@@ -39,7 +37,7 @@ public class TailingInputStream extends InputStream {
     }
 
     private void init() {
-        producerTask = new TimerTask() {
+        producerTask = new Runnable() {
             @Override
             public void run() {
                 byte[] buf = new byte[BLOCK_SIZE];
