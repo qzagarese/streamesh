@@ -1,7 +1,0 @@
-name: simple-data-merger
-image: "simple-data-merger:latest"
-inputMapping:
-  baseCmd: java -jar /usr/bin/simple-data-merger-1.0-SNAPSHOT.jar
-outputMapping:
-  outputDir: /tmp
-  outputFileName: data.csv

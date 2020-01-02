@@ -1,4 +1,4 @@
-package io.scicast.simpledatamerger;
+package io.scicast.s3downloader;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.io.*;
 
 @SpringBootApplication
-public class SimpleDataMerger {
+public class S3Downloader {
 
     public static void main(String[] args) throws IOException {
         AWSCredentials credentials = new BasicAWSCredentials(

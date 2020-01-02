@@ -1,12 +1,15 @@
 package io.scicast.streamesh.core.internal;
 
 import io.scicast.streamesh.core.*;
+import io.scicast.streamesh.core.exception.InvalidCmdParameterException;
+import io.scicast.streamesh.core.exception.MissingParameterException;
 import io.scicast.streamesh.core.exception.NotFoundException;
 
 import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
@@ -118,8 +121,27 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     private String buildCommand(CallableDefinition definition, Map<?, ?> input) {
-        //TODO map inputs to build the command
-        return definition.getInputMapping().getBaseCmd();
+        InputMapping inputMapping = definition.getInputMapping();
+        String params = inputMapping.getParameters().stream()
+                .map(p -> {
+                    Object o = input.get(p.getExternalName());
+                    if (!p.isOptional() && o == null) {
+                        throw new MissingParameterException(String.format("Parameter %s is mandatory.", p.getExternalName()));
+                    }
+                    if (p.isRepeatable() && (!List.class.isAssignableFrom(o.getClass()))) {
+                        throw new InvalidCmdParameterException(String.format("Parameter %s must be provided as an array", p.getExternalName()));
+                    }
+                    if (!p.isRepeatable()) {
+                        String value = (String) o;
+                        return p.getInternalName().trim() + " " + value.trim();
+                    } else {
+                        List<String> value = (List<String>) o;
+                        return value.stream()
+                                .map(v -> p.getInternalName().trim() + " " + v.trim())
+                                .collect(Collectors.joining(" "));
+                    }
+                }).collect(Collectors.joining(" "));
+        return inputMapping.getBaseCmd().trim() + " " + params.trim();
     }
 
     public InputStream getJobOutput(String jobDescriptorId) {

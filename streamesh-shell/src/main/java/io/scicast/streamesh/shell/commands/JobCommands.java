@@ -23,7 +23,8 @@ public class JobCommands {
     private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @ShellMethod(value = "Schedules a new job for the specified service id.", key = "run-job")
-    public String scheduleJob(@ShellOption(value = "--svc-id") String definitionId) throws JsonProcessingException {
+    public String scheduleJob(@ShellOption(value = "--svc-id") String definitionId,
+                              @ShellOption(value = "--json-body", defaultValue = ShellOption.NULL) String jsonBody) throws JsonProcessingException {
         RestClient client = new RestClient(System.getProperty(Constants.SERVER_URL_PROPERTY, Constants.SERVER_URL_DEFAULT))
                 .onClientError(ce -> {
                     if (ce.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
@@ -33,7 +34,7 @@ public class JobCommands {
                     }
                 }).onServerError(se -> System.err.println(ERROR_STATUS_MSG + se.getStatusCode()))
                 .onGenericError(e -> System.err.println(GENERIC_ERROR_MSG));
-        ResponseEntity<String> jobResponse = client.postJson("/definitions/" + definitionId + "/jobs", "{}");
+        ResponseEntity<String> jobResponse = client.postJson("/definitions/" + definitionId + "/jobs", jsonBody == null ? "{}" : jsonBody);
 
         if(jobResponse == null) {
             return null;
@@ -47,7 +48,7 @@ public class JobCommands {
 
 
     @ShellMethod(value = "Retrieves the output of a job specified by job-id.", key = "get-output")
-    public String getJobOutput(@ShellOption("--jobId") String jobId) {
+    public String getJobOutput(@ShellOption("--job-id") String jobId) {
         RestClient client = new RestClient(System.getProperty(Constants.SERVER_URL_PROPERTY, Constants.SERVER_URL_DEFAULT))
                 .onClientError(ce -> {
                     if (ce.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
