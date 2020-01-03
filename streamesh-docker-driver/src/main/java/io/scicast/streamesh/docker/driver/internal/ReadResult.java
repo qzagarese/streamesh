@@ -10,4 +10,5 @@ import lombok.Setter;
 public class ReadResult {
     private int readBytes;
     private byte[] buffer;
+    private int blockNumber;
 }

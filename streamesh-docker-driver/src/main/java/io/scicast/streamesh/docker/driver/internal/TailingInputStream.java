@@ -40,7 +40,7 @@ public class TailingInputStream extends InputStream {
         producerTask = new Runnable() {
             @Override
             public void run() {
-                byte[] buf = new byte[BLOCK_SIZE];
+                int blockNumber = 1;
                 RandomAccessFile raf = null;
                 int read = 0;
                 try {
@@ -50,6 +50,7 @@ public class TailingInputStream extends InputStream {
                     throw new RuntimeException(String.format("Could not locate file %s", filePath));
                 }
                 while (fileLength > lastKnownPosition || !writeComplete) {
+                    byte[] buf = new byte[BLOCK_SIZE];
                     try {
                         raf = new RandomAccessFile(filePath, "r");
                     } catch (FileNotFoundException e) {
@@ -68,7 +69,9 @@ public class TailingInputStream extends InputStream {
                                 blocks.put(ReadResult.builder()
                                         .buffer(buf)
                                         .readBytes(read)
+                                        .blockNumber(blockNumber)
                                         .build());
+                                blockNumber++;
                             } catch (InterruptedException e) {
                                 logger.severe("Could not add buffer to the queue.");
                             }
@@ -110,6 +113,7 @@ public class TailingInputStream extends InputStream {
         ReadResult rr = null;
         try {
             rr = blocks.take();
+            logger.info(String.format("Reading block %s.", rr.getBlockNumber()));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

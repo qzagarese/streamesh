@@ -18,6 +18,10 @@ import java.util.stream.Stream;
 @SpringBootApplication
 public class HttpDataMerger {
 
+    private static final String HEADER = "id,name,host_id,host_name,neighbourhood_group,neighbourhood," +
+            "latitude,longitude,room_type,price,minimum_nights,number_of_reviews,last_review,reviews_per_month," +
+            "calculated_host_listings_count,availability_365";
+
     public static void main(String[] args) throws IOException {
 
         BufferedWriter bw = new BufferedWriter(new FileWriter("/tmp/data.csv"));
@@ -36,10 +40,15 @@ public class HttpDataMerger {
             URLConnection urlConnection = url.openConnection();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
 
+            bw.write(HEADER);
+            bw.newLine();
+
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                bw.write(line);
-                bw.newLine();
+                if (!line.isBlank() && !line.startsWith("id")) {
+                    bw.write(line);
+                    bw.newLine();
+                }
             }
             bufferedReader.close();
         } catch (Exception e) {
