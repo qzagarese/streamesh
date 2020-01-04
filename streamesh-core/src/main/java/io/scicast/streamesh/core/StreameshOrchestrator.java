@@ -22,6 +22,8 @@ public interface StreameshOrchestrator {
 
     JobDescriptor scheduleJob(String definitionId, Map<?, ?> input);
 
+    JobDescriptor scheduleSecureJob(String definitionId, Map<?, ?> input, String publicKey);
+
     JobDescriptor getJob(String jobId);
 
     InputStream getJobOutput(String jobDescriptorId);

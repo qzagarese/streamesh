@@ -4,11 +4,14 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
+import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.function.Consumer;
 
 public class RestClient {
@@ -59,11 +62,11 @@ public class RestClient {
         return execute(uri, content, headers, HttpMethod.POST);
     }
 
-    private ResponseEntity<String> execute(String uri, String content, HttpHeaders headers, HttpMethod post) {
+    private ResponseEntity<String> execute(String uri, String content, HttpHeaders headers, HttpMethod method) {
         HttpEntity<String> requestEntity = new HttpEntity<String>(content, headers);
         ResponseEntity<String> responseEntity = null;
         try {
-            responseEntity = rest.exchange(server + uri, post, requestEntity, String.class);
+            responseEntity = rest.exchange(server + uri, method, requestEntity, String.class);
         } catch (HttpClientErrorException ce) {
             if(this.onClientError != null) {
                 this.onClientError.accept(ce);
@@ -86,4 +89,30 @@ public class RestClient {
         return responseEntity;
     }
 
+    public void download(String uri, OutputStream fos) {
+        try {
+            rest.execute(server + uri, HttpMethod.GET,  req -> {}, resp -> {
+                StreamUtils.copy(resp.getBody(), fos);
+                return fos;
+            }, new Object[0]);
+        } catch (HttpClientErrorException ce) {
+            if(this.onClientError != null) {
+                this.onClientError.accept(ce);
+            } else {
+                throw ce;
+            }
+        } catch (HttpServerErrorException se) {
+            if(this.onServerError != null) {
+                this.onServerError.accept(se);
+            } else {
+                throw se;
+            }
+        } catch (Exception e) {
+            if(this.onGenericError != null) {
+                this.onGenericError.accept(e);
+            } else {
+                throw e;
+            }
+        }
+    }
 }

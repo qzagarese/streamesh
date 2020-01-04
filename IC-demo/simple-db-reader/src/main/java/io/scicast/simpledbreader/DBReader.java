@@ -71,5 +71,4 @@ public class DBReader {
 //| availability_365               | blo
     }
 
-
 }

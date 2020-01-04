@@ -25,6 +25,7 @@ public class TailingInputStream extends InputStream {
 
     private BlockingQueue<ReadResult> blocks = new LinkedBlockingQueue<>(NUMBER_OF_BLOCKS);
     private int readBytes = 0;
+    private byte[] leftOver;
 
     public TailingInputStream(String filePath) {
         this(filePath, false);
@@ -106,8 +107,13 @@ public class TailingInputStream extends InputStream {
 
     @Override
     public int read(byte[] buf) throws IOException {
-        if ((fileLength > 0) && writeComplete && (readBytes >= fileLength)) {
+        if ((fileLength > 0) && writeComplete && (readBytes >= fileLength) && leftOver == null) {
             return -1;
+        }
+        if (leftOver != null) {
+            int read = handleLeftOver(buf);
+            readBytes+=read;
+            return read;
         }
 
         ReadResult rr = null;
@@ -123,15 +129,32 @@ public class TailingInputStream extends InputStream {
             readBytes += rr.getReadBytes();
             return rr.getReadBytes();
         } else {
-            byte[] remainingBlockBytes = new byte[rr.getBuffer().length - buf.length];
             System.arraycopy(rr.getBuffer(), 0, buf, 0, buf.length);
-            System.arraycopy(rr.getBuffer(),buf.length - 1, remainingBlockBytes,0, (rr.getBuffer().length - buf.length));
-            rr.setBuffer(remainingBlockBytes);
-            rr.setReadBytes(rr.getBuffer().length - buf.length);
+            createLeftOver(rr.getBuffer(), buf.length);
             readBytes += buf.length;
             return buf.length;
         }
 
+    }
+
+    private void createLeftOver(byte[] initialBuf, int startIndex) {
+        leftOver = new byte[initialBuf.length - startIndex];
+        System.arraycopy(initialBuf, startIndex, leftOver, 0, leftOver.length);
+    }
+
+    private int handleLeftOver(byte[] b) {
+        if (b.length >= leftOver.length) {
+            System.arraycopy(leftOver, 0, b, 0, leftOver.length);
+            int read = leftOver.length;
+            leftOver = null;
+            return read;
+        } else {
+            System.arraycopy(leftOver, 0, b, 0, b.length);
+            byte[] newLeftOver = new byte[leftOver.length - b.length];
+            System.arraycopy(leftOver, b.length, newLeftOver, 0, newLeftOver.length);
+            leftOver = newLeftOver;
+            return b.length;
+        }
     }
 
 }

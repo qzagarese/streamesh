@@ -1,6 +1,8 @@
 package io.scicast.streamesh.core.internal;
 
 import io.scicast.streamesh.core.*;
+import io.scicast.streamesh.core.crypto.CryptoUtil;
+import io.scicast.streamesh.core.crypto.EncryptedInputStream;
 import io.scicast.streamesh.core.exception.InvalidCmdParameterException;
 import io.scicast.streamesh.core.exception.MissingParameterException;
 import io.scicast.streamesh.core.exception.NotFoundException;
@@ -9,7 +11,6 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
@@ -100,6 +101,13 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
         return descriptor;
     }
 
+    public JobDescriptor scheduleSecureJob(String definitionId, Map<?, ?> input, String publicKey) {
+        CryptoUtil.WrappedAesGCMKey wrappedKey = CryptoUtil.createWrappedKey(publicKey);
+        JobDescriptor descriptor = scheduleJob(definitionId, input);
+        descriptor.setKey(wrappedKey);
+        return descriptor;
+    }
+
     public JobDescriptor getJob(String jobId) {
         JobDescriptor job = jobs.get(jobId);
         if (job == null) {
@@ -146,6 +154,10 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
 
     public InputStream getJobOutput(String jobDescriptorId) {
         JobDescriptor job = getJob(jobDescriptorId);
-        return driver.getJobOutput(jobDescriptorId);
+        InputStream stream = driver.getJobOutput(jobDescriptorId);
+        if (job.getKey() != null) {
+            stream = CryptoUtil.getCipherInputStream(stream, job.getKey());
+        }
+        return stream;
     }
 }
