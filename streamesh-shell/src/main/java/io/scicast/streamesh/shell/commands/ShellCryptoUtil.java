@@ -61,7 +61,7 @@ public class ShellCryptoUtil {
         byte[] buffer = new byte[100 * 1024];
         int read = decryptingStream.read(buffer);
         while (read != -1) {
-            fos.write(buffer);
+            fos.write(buffer, 0, read);
             read = decryptingStream.read(buffer);
         }
         fos.flush();

@@ -17,15 +17,23 @@ import java.util.Map;
 @RestController
 public class JobsController {
 
+    public static final String STREAMESH_PUBLIC_KEY = "streamesh-public-key";
+
     @Autowired
     private StreameshOrchestrator orchestrator;
 
 
     @PostMapping(value = "/definitions/{definitionId}/jobs", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Map<?, ?>> postJob(@PathVariable("definitionId") String definitionId, @RequestBody Map<?, ?> jobInput) {
-        JobDescriptor jobDescriptor = orchestrator.scheduleJob(definitionId, jobInput);
+        String publicKey = (String) jobInput.get(STREAMESH_PUBLIC_KEY);
+        JobDescriptor descriptor;
+        if (publicKey == null) {
+            descriptor = orchestrator.scheduleJob(definitionId, jobInput);
+        } else {
+            descriptor = orchestrator.scheduleSecureJob(definitionId, jobInput, publicKey);
+        }
         Map<Object, Object> result = new HashMap<>();
-        result.put("jobId", jobDescriptor.getId());
+        result.put("jobId", descriptor.getId());
         return ResponseEntity.ok(result);
     }
 
@@ -48,6 +56,10 @@ public class JobsController {
         response.flushBuffer();
     }
 
+    @GetMapping("/jobs/{jobId}")
+    public ResponseEntity<JobDescriptor> getJobDetails(@PathVariable("jobId") String jobId) {
+        return ResponseEntity.ok(orchestrator.getJob(jobId));
+    }
 
     @GetMapping("/jobs")
     public ResponseEntity<Collection<JobDescriptor>> getAllJobs() {

@@ -130,16 +130,16 @@ public class TailingInputStream extends InputStream {
             return rr.getReadBytes();
         } else {
             System.arraycopy(rr.getBuffer(), 0, buf, 0, buf.length);
-            createLeftOver(rr.getBuffer(), buf.length);
+            createLeftOver(rr.getBuffer(), buf.length, rr.getReadBytes() - buf.length);
             readBytes += buf.length;
             return buf.length;
         }
 
     }
 
-    private void createLeftOver(byte[] initialBuf, int startIndex) {
-        leftOver = new byte[initialBuf.length - startIndex];
-        System.arraycopy(initialBuf, startIndex, leftOver, 0, leftOver.length);
+    private void createLeftOver(byte[] initialBuf, int startIndex, int leftOverSize) {
+        leftOver = new byte[leftOverSize];
+        System.arraycopy(initialBuf, startIndex, leftOver, 0, leftOverSize);
     }
 
     private int handleLeftOver(byte[] b) {
