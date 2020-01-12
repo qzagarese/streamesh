@@ -50,6 +50,7 @@ public class JobsController {
         int b = is.read(buf);
         while(b != -1) {
             os.write(buf, 0, b);
+            os.flush();
             b = is.read(buf);
         }
         os.close();

@@ -27,21 +27,20 @@ public class S3Downloader {
                 .withRegion(Regions.EU_WEST_2)
                 .build();
 
-        S3Object s3object = s3client.getObject("ic-demo-streamesh", "data/manhattan.csv");
+        S3Object s3object = s3client.getObject(args[1], args[3]);
         S3ObjectInputStream inputStream = s3object.getObjectContent();
 
-        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-        BufferedWriter bw = new BufferedWriter(new FileWriter("/tmp/data.csv"));
+        FileOutputStream fos = new FileOutputStream("/tmp/data.csv");
 
-        String line = br.readLine();
-        while(line != null) {
-            bw.write(line);
-            bw.newLine();
-            line = br.readLine();
+        byte[] buffer = new byte[100 * 1024];
+        int b = inputStream.read(buffer);
+        while(b != -1) {
+            fos.write(buffer, 0, b);
+            b = inputStream.read(buffer);
         }
-        br.close();
-        bw.flush();
-        bw.close();
+        inputStream.close();
+        fos.flush();
+        fos.close();
     }
 
 }

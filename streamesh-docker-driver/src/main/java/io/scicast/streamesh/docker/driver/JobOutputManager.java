@@ -17,7 +17,9 @@ public class JobOutputManager {
     }
 
     public InputStream requestStream() {
-        return new TailingInputStream(outputFilePath, jobTerminated);
+        TailingInputStream stream = new TailingInputStream(outputFilePath, jobTerminated);
+        registeredTailers.add(stream);
+        return stream;
     }
 
     public void notifyTermination() {

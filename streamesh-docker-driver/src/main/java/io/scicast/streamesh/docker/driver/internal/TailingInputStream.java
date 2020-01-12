@@ -76,17 +76,26 @@ public class TailingInputStream extends InputStream {
                             } catch (InterruptedException e) {
                                 logger.severe("Could not add buffer to the queue.");
                             }
+                            lastKnownPosition = raf.getFilePointer();
                         }
-                        lastKnownPosition = raf.getFilePointer();
                         raf.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
                 try {
-                    Thread.sleep(100);
+                    blocks.put(ReadResult.builder()
+                            .blockNumber(blockNumber)
+                            .readBytes(-1)
+                            .buffer(new byte[0])
+                            .build());
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    logger.severe("Could not add last buffer to the queue.");
                 }
             }
         };

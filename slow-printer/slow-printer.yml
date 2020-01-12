@@ -1,0 +1,7 @@
+name: slow-printer
+image: "slow-printer:latest"
+inputMapping:
+  baseCmd: java -jar /usr/bin/slow-printer-1.0-SNAPSHOT.jar
+outputMapping:
+  outputDir: /tmp
+  outputFileName: output.txt

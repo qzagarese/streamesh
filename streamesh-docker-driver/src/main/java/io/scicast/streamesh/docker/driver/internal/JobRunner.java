@@ -50,7 +50,7 @@ public class JobRunner {
             });
             try {
                 start.exec();
-                descriptor = descriptor.withStatus(JobDescriptor.JobStatus.COMPLETE);
+                descriptor = descriptor.withStatus(JobDescriptor.JobStatus.RUNNING);
                 onStatusUpdate.accept(descriptor);
             } catch (Exception e) {
                descriptor = descriptor.withStatus(JobDescriptor.JobStatus.FAILED)
@@ -100,7 +100,9 @@ public class JobRunner {
                             logger.info("Container " + descriptor.getContainerId() + " is in state " + state);
                             descriptor = descriptor.withStatus(state.equalsIgnoreCase("running") ? JobDescriptor.JobStatus.RUNNING : JobDescriptor.JobStatus.COMPLETE);
                             onContainerStateChange.accept(descriptor);
-                            this.cancel();
+                            if (descriptor.getStatus().equals(JobDescriptor.JobStatus.COMPLETE)) {
+                                this.cancel();
+                            }
                         }
                     }
                 }
