@@ -23,7 +23,7 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
     private Map<String, JobDescriptor> jobs = new HashMap<>();
     private Map<CallableDefinition, Set<JobDescriptor>> definitionToJobs = new HashMap<>();
 
-    public InMemoryStreameshOrchestrator() {
+    public InMemoryStreameshOrchestrator(String serverIpAddress) {
         ServiceLoader<OrchestrationDriver> loader = ServiceLoader.load(OrchestrationDriver.class);
 
         this.driver = StreamSupport.stream(loader.spliterator(), false)
@@ -35,6 +35,7 @@ public class InMemoryStreameshOrchestrator implements StreameshOrchestrator {
                     return impl;
                 })
                 .orElseThrow(() -> new RuntimeException("No orchestration driver. Booting sequence aborted."));
+        this.driver.setStreameshServerAddress(serverIpAddress);
     }
 
     public String applyDefinition(CallableDefinition definition) {

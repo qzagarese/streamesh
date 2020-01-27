@@ -95,9 +95,8 @@ public class JobRunner {
                     Optional<Container> container = findContainer();
                     if(container.isPresent()) {
                         String state = container.get().getState();
-                        String ststus = container.get().getStatus();
                         if (state.equalsIgnoreCase("running") || state.equalsIgnoreCase("exited")) {
-                            logger.info("Container " + descriptor.getContainerId() + " is in state " + state);
+                            logger.finest("Container " + descriptor.getContainerId() + " is in state " + state);
                             descriptor = descriptor.withStatus(state.equalsIgnoreCase("running") ? JobDescriptor.JobStatus.RUNNING : JobDescriptor.JobStatus.COMPLETE);
                             onContainerStateChange.accept(descriptor);
                             if (descriptor.getStatus().equals(JobDescriptor.JobStatus.COMPLETE)) {

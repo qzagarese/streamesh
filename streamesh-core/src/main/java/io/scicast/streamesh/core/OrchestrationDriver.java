@@ -10,4 +10,6 @@ public interface OrchestrationDriver {
     JobDescriptor scheduleJob(String image, String command, OutputMapping outputMapping, Consumer<JobDescriptor> onStatusUpdate);
 
     InputStream getJobOutput(String jobId);
+
+    void setStreameshServerAddress(String ipAddress);
 }

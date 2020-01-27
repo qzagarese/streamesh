@@ -5,9 +5,9 @@ import io.scicast.streamesh.core.internal.InMemoryStreameshOrchestrator;
 public class StreameshOrchestratorFactory {
 
 
-    public StreameshOrchestrator createOrchestrator() {
+    public StreameshOrchestrator createOrchestrator(String serverIpAddress) {
 
-        return new InMemoryStreameshOrchestrator();
+        return new InMemoryStreameshOrchestrator(serverIpAddress);
 
     }
 }

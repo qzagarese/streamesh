@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,6 +14,7 @@ import java.io.OutputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 @RestController
 public class JobsController {
@@ -22,6 +24,7 @@ public class JobsController {
     @Autowired
     private StreameshOrchestrator orchestrator;
 
+    private Logger logger = Logger.getLogger(getClass().getName());
 
     @PostMapping(value = "/definitions/{definitionId}/jobs", consumes = "application/json", produces = "application/json")
     public ResponseEntity<Map<?, ?>> postJob(@PathVariable("definitionId") String definitionId, @RequestBody Map<?, ?> jobInput) {
@@ -45,13 +48,19 @@ public class JobsController {
     @GetMapping(value = "/jobs/{jobId}/output")
     public void getOutput(@PathVariable("jobId") String jobId, HttpServletResponse response) throws IOException {
         InputStream is = orchestrator.getJobOutput(jobId);
-        OutputStream os = response.getOutputStream();
+        ServletOutputStream os = response.getOutputStream();
         byte[] buf = new byte[100 * 1024];
         int b = is.read(buf);
         while(b != -1) {
-            os.write(buf, 0, b);
-            os.flush();
-            b = is.read(buf);
+                os.write(buf, 0, b);
+            try {
+                os.flush();
+                b = is.read(buf);
+            } catch (IOException e) {
+                os.close();
+                b = -1;
+                logger.info(String.format("Output request for job id %s has been cancelled by the client.", jobId)  );
+            }
         }
         os.close();
         response.flushBuffer();

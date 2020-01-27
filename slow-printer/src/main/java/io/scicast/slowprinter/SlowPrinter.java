@@ -12,7 +12,7 @@ public class SlowPrinter {
     public static void main(String[] args) throws IOException {
         BufferedWriter bw = new BufferedWriter( new FileWriter("/tmp/output.txt"));
 
-        IntStream.range(0, 60).forEachOrdered(i -> {
+        IntStream.range(0, 600).forEachOrdered(i -> {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {

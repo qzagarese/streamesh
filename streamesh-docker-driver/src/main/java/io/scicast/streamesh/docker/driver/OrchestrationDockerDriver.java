@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class OrchestrationDockerDriver implements OrchestrationDriver {
 
@@ -26,10 +27,12 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
     public static final String STREAMESH_DIR = "streamesh";
     public static final String OUTPUT_FILE_NAME = "output.log";
     public static final String TMP = "/tmp/";
+    public static final String STREAMESH_SERVER_HOST_NAME = "streamesh-server";
     private Logger logger = Logger.getLogger(getClass().getName());
     private DockerClient client = DockerClientProviderFactory.create().getClient();
 
     private Map<String, JobOutputManager> outputManagers = new HashMap<>();
+    private String streameshServerAddress;
 
     public String retrieveContainerImage(String imageName) {
         CompletableFuture<String> respFut = new CompletableFuture<>();
@@ -66,6 +69,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         CreateContainerCmd create = client.createContainerCmd(image);
         create = create.withCmd(command.split(" "));
         create = setupOutputVolume(create, hostOutputDirPath, outputMapping.getOutputDir());
+        create = setupServerIpMapping(create, streameshServerAddress);
 
         CreateContainerResponse createContainerResponse = create.exec();
         descriptor = descriptor.withContainerId(createContainerResponse.getId());
@@ -78,6 +82,17 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         });
         runner.init();
         return descriptor;
+    }
+
+    private CreateContainerCmd setupServerIpMapping(CreateContainerCmd cmd, String streameshServerAddress) {
+        List<String> extraHosts = Optional.ofNullable(cmd.getHostConfig().getExtraHosts())
+                .map(Arrays::asList)
+                .map(ArrayList::new)
+                .orElse(new ArrayList<>());
+        extraHosts.add(STREAMESH_SERVER_HOST_NAME + ":" + streameshServerAddress);
+        HostConfig hc = cmd.getHostConfig().withExtraHosts(extraHosts.toArray(new String[0]));
+        return cmd.withHostConfig(hc);
+
     }
 
     private JobDescriptor handleUpdate(JobDescriptor descriptor) {
@@ -116,6 +131,10 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
 
     public InputStream getJobOutput(String jobId) {
         return outputManagers.get(jobId).requestStream();
+    }
+
+    public void setStreameshServerAddress(String ipAddress) {
+        this.streameshServerAddress = ipAddress;
     }
 
     private String computeImageName(String cmdImageName) {

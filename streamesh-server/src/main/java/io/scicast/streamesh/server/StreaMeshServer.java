@@ -6,15 +6,20 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import java.io.IOException;
+
 @SpringBootApplication
 public class StreaMeshServer {
 
-    public static void main(String[] args) {
-        SpringApplication.run(StreaMeshServer.class, args);
+    private static String serverAddress;
+
+    public static void main(String[] args) throws IOException {
+        serverAddress = System.getProperty(StartupUtils.STREAMESH_SERVER_ADDRESS_PROPERTY, StartupUtils.selectAddress());
+        SpringApplication.run(io.scicast.streamesh.server.StreaMeshServer.class, args);
     }
 
     @Bean
     public StreameshOrchestrator provideOrchestrator() {
-        return new StreameshOrchestratorFactory().createOrchestrator();
+        return new StreameshOrchestratorFactory().createOrchestrator(serverAddress);
     }
 }
