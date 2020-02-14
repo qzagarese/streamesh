@@ -6,15 +6,15 @@ import java.util.Set;
 
 public interface StreameshOrchestrator {
 
-    String applyDefinition(CallableDefinition definition);
+    String applyDefinition(Micropipe definition);
 
-    CallableDefinition getDefinition(String id);
+    Micropipe getDefinition(String id);
 
-    CallableDefinition getDefinitionByName(String name);
+    Micropipe getDefinitionByName(String name);
 
     void removeDefinition(String id);
 
-    Set<CallableDefinition> getDefinitions();
+    Set<Micropipe> getDefinitions();
 
     Set<JobDescriptor> getAllJobs();
 

@@ -19,7 +19,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class OrchestrationDockerDriver implements OrchestrationDriver {
 
@@ -74,7 +73,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         CreateContainerResponse createContainerResponse = create.exec();
         descriptor = descriptor.withContainerId(createContainerResponse.getId());
 
-        JobOutputManager manager = new JobOutputManager(hostOutputDirPath + File.separator + outputMapping.getOutputFileName());
+        JobOutputManager manager = new JobOutputManager(hostOutputDirPath + File.separator + outputMapping.getFileNamePattern());
         outputManagers.put(descriptor.getId(), manager);
 
         JobRunner runner = new JobRunner(client, descriptor, jd -> {

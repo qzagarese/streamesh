@@ -2,21 +2,22 @@ package io.scicast.streamesh.core;
 
 import lombok.*;
 
+import java.util.List;
+
 @Builder
 @With
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class CallableDefinition {
+public class Micropipe {
 
     private String id;
     private String name;
     private String image;
     private String imageId;
     private String description;
-    private int maxConcurrentJobs = 5;
     private InputMapping inputMapping;
-    private OutputMapping outputMapping;
+    private List<OutputMapping> outputMapping;
 
 }

@@ -9,7 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 public class CmdParameter {
 
-    private String externalName;
+    private String name;
     private String internalName;
     private boolean optional = true;
     private boolean repeatable;

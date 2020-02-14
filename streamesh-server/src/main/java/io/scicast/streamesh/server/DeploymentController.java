@@ -1,6 +1,6 @@
 package io.scicast.streamesh.server;
 
-import io.scicast.streamesh.core.CallableDefinition;
+import io.scicast.streamesh.core.Micropipe;
 import io.scicast.streamesh.core.StreameshOrchestrator;
 import io.scicast.streamesh.core.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ public class DeploymentController {
     private StreameshOrchestrator orchestrator;
 
     @PostMapping(value = "/definitions", consumes = "application/x-yaml", produces = "application/json")
-    public ResponseEntity<Map<?, ?>> applyDefinition(@RequestBody CallableDefinition definition) {
+    public ResponseEntity<Map<?, ?>> applyDefinition(@RequestBody Micropipe definition) {
         String definitionId = orchestrator.applyDefinition(definition);
         HashMap<Object, Object> result = new HashMap<>();
         result.put("definitionId", definitionId);
@@ -27,17 +27,17 @@ public class DeploymentController {
     }
 
     @GetMapping(value = "/definitions", produces = "application/json")
-    public ResponseEntity<Set<CallableDefinition>> getDefinitions() {
+    public ResponseEntity<Set<Micropipe>> getDefinitions() {
         return ResponseEntity.ok(orchestrator.getDefinitions());
     }
 
     @GetMapping(value = "/definitions/{id}", produces = "application/json")
-    public ResponseEntity<CallableDefinition> getDefinitionById(@PathVariable String id) {
+    public ResponseEntity<Micropipe> getDefinitionById(@PathVariable String id) {
         return ResponseEntity.ok(orchestrator.getDefinition(id));
     }
 
     @GetMapping(value = "/definitions/by-name/{name}", produces = "application/json")
-    public ResponseEntity<CallableDefinition> getDefinitionByName(@PathVariable String name) {
+    public ResponseEntity<Micropipe> getDefinitionByName(@PathVariable String name) {
         return ResponseEntity.ok(orchestrator.getDefinitionByName(name));
     }
 

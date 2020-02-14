@@ -22,10 +22,6 @@ public class CryptoUtil {
     public static final String RSA_ECB_PKCS_1_PADDING = "RSA/ECB/PKCS1Padding";
     public static final String AES_GCM_NO_PADDING = "AES/GCM/NoPadding";
 
-//    static {
-//        Security.addProvider(new BouncyCastleProvider());
-//    }
-
     public static final int AES_KEY_SIZE = 256;
     public static final int GCM_IV_LENGTH = 12;
     public static final int GCM_TAG_LENGTH = 16;

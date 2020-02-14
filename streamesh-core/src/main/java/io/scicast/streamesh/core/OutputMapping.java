@@ -9,7 +9,9 @@ import lombok.*;
 @AllArgsConstructor
 public class OutputMapping {
 
+    private String name;
+    private String endpoint;
     private String outputDir;
-    private String outputFileName;
+    private String fileNamePattern;
 
 }
