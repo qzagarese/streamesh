@@ -3,7 +3,7 @@ package io.scicast.streamesh.docker.driver.internal;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.model.Container;
-import io.scicast.streamesh.core.JobDescriptor;
+import io.scicast.streamesh.core.TaskDescriptor;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -21,12 +21,12 @@ public class JobRunner {
 
     private static final String CONTAINER_NOT_FOUND_MSG = "Could not locate container with id %s for job %s";
     private DockerClient client;
-    private JobDescriptor descriptor;
-    Consumer<JobDescriptor> onStatusUpdate;
+    private TaskDescriptor descriptor;
+    Consumer<TaskDescriptor> onStatusUpdate;
 
     private Logger logger = Logger.getLogger(getClass().getName());
 
-    public JobRunner(DockerClient client, JobDescriptor descriptor, Consumer<JobDescriptor> onStatusUpdate) {
+    public JobRunner(DockerClient client, TaskDescriptor descriptor, Consumer<TaskDescriptor> onStatusUpdate) {
         this.client = client;
         this.descriptor = descriptor;
         this.onStatusUpdate = onStatusUpdate;
@@ -35,7 +35,7 @@ public class JobRunner {
     public void init() {
         Optional<Container> c = findContainer();
         if (c.isEmpty()) {
-            descriptor = descriptor.withStatus(JobDescriptor.JobStatus.FAILED)
+            descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.FAILED)
                     .withErrorMessage(
                             String.format(CONTAINER_NOT_FOUND_MSG, descriptor.getContainerId(), descriptor.getId()));
             onStatusUpdate.accept(descriptor);
@@ -50,10 +50,10 @@ public class JobRunner {
             });
             try {
                 start.exec();
-                descriptor = descriptor.withStatus(JobDescriptor.JobStatus.RUNNING);
+                descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.RUNNING);
                 onStatusUpdate.accept(descriptor);
             } catch (Exception e) {
-               descriptor = descriptor.withStatus(JobDescriptor.JobStatus.FAILED)
+               descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.FAILED)
                        .withErrorMessage(e.getMessage());
                onStatusUpdate.accept(descriptor);
             }
@@ -80,10 +80,10 @@ public class JobRunner {
 
     class StartObserver {
 
-        private JobDescriptor descriptor;
-        private Consumer<JobDescriptor> onContainerStateChange;
+        private TaskDescriptor descriptor;
+        private Consumer<TaskDescriptor> onContainerStateChange;
 
-        StartObserver(JobDescriptor descriptor, Consumer<JobDescriptor> onContainerStateChange) {
+        StartObserver(TaskDescriptor descriptor, Consumer<TaskDescriptor> onContainerStateChange) {
             this.descriptor = descriptor;
             this.onContainerStateChange = onContainerStateChange;
             track();
@@ -97,9 +97,9 @@ public class JobRunner {
                         String state = container.get().getState();
                         if (state.equalsIgnoreCase("running") || state.equalsIgnoreCase("exited")) {
                             logger.finest("Container " + descriptor.getContainerId() + " is in state " + state);
-                            descriptor = descriptor.withStatus(state.equalsIgnoreCase("running") ? JobDescriptor.JobStatus.RUNNING : JobDescriptor.JobStatus.COMPLETE);
+                            descriptor = descriptor.withStatus(state.equalsIgnoreCase("running") ? TaskDescriptor.JobStatus.RUNNING : TaskDescriptor.JobStatus.COMPLETE);
                             onContainerStateChange.accept(descriptor);
-                            if (descriptor.getStatus().equals(JobDescriptor.JobStatus.COMPLETE)) {
+                            if (descriptor.getStatus().equals(TaskDescriptor.JobStatus.COMPLETE)) {
                                 this.cancel();
                             }
                         }

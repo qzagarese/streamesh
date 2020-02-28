@@ -22,17 +22,17 @@ import static io.scicast.streamesh.shell.Constants.ERROR_STATUS_MSG;
 import static io.scicast.streamesh.shell.Constants.GENERIC_ERROR_MSG;
 
 @ShellComponent
-public class JobCommands {
+public class TasksCommands {
 
     public static final String STREAMESH_PUBLIC_KEY = "streamesh-public-key";
 
     private ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    @ShellMethod(value = "Schedules a new job for the specified service id.", key = "run-job")
-    public String scheduleJob(@ShellOption(value = "--svc-id") String definitionId,
-                              @ShellOption(value = "--json-body", defaultValue = ShellOption.NULL) String jsonBody,
-                              @ShellOption(value = "--json-file", defaultValue = ShellOption.NULL) String jsonFile,
-                              @ShellOption(value = "--public-key", defaultValue = ShellOption.NULL) String publicKey)
+    @ShellMethod(value = "Schedules a new task for the specified service id.", key = "run-task")
+    public String scheduleTask(@ShellOption(value = "--svc-id") String definitionId,
+                               @ShellOption(value = "--json-body", defaultValue = ShellOption.NULL) String jsonBody,
+                               @ShellOption(value = "--json-file", defaultValue = ShellOption.NULL) String jsonFile,
+                               @ShellOption(value = "--public-key", defaultValue = ShellOption.NULL) String publicKey)
             throws IOException, InvalidKeySpecException, NoSuchAlgorithmException {
         RestClient client = new RestClient(System.getProperty(Constants.SERVER_URL_PROPERTY, Constants.SERVER_URL_DEFAULT))
                 .onClientError(ce -> {
@@ -49,7 +49,7 @@ public class JobCommands {
             jsonMap.put(STREAMESH_PUBLIC_KEY, Base64.getEncoder().encodeToString(pk.getEncoded()));
         }
 
-        ResponseEntity<String> jobResponse = client.postJson("/definitions/" + definitionId + "/jobs", mapper.writerFor(new TypeReference<Map<?, ?>>() {
+        ResponseEntity<String> jobResponse = client.postJson("/definitions/" + definitionId + "/tasks", mapper.writerFor(new TypeReference<Map<?, ?>>() {
         }).writeValueAsString(jsonMap));
 
         if (jobResponse == null) {
@@ -58,11 +58,11 @@ public class JobCommands {
         Map<?, ?> responseBody = mapper.readerFor(new TypeReference<Map<?, ?>>() {
         }).readValue(jobResponse.getBody());
 
-        return "Job scheduled with id: " + responseBody.get("jobId");
+        return "Task scheduled with id: " + responseBody.get("taskId");
 
     }
 
-    private Map<String, Object> handleJsonBody(@ShellOption(value = "--json-body", defaultValue = ShellOption.NULL) String jsonBody, @ShellOption(value = "--json-file", defaultValue = ShellOption.NULL) String jsonFile) throws IOException {
+    private Map<String, Object> handleJsonBody(String jsonBody, String jsonFile) throws IOException {
         if (jsonBody == null && jsonFile != null) {
             jsonBody = readFile(jsonFile);
         }
@@ -79,20 +79,21 @@ public class JobCommands {
     }
 
 
-    @ShellMethod(value = "Retrieves the output of a job specified by job-id.", key = "get-result")
-    public void getJobOutput(@ShellOption("--job-id") String jobId,
+    @ShellMethod(value = "Retrieves the output of a task specified by task-id.", key = "get-result")
+    public void getTaskOutput(@ShellOption("--task-id") String taskId,
+                               @ShellOption("--output-name") String outputName,
                                @ShellOption("--output-file") String outputFile) throws IOException {
         RestClient client = new RestClient(System.getProperty(Constants.SERVER_URL_PROPERTY, Constants.SERVER_URL_DEFAULT))
                 .onClientError(ce -> {
                     if (ce.getStatusCode().equals(HttpStatus.NOT_FOUND)) {
-                        System.err.println("Could not find job with id " + jobId);
+                        System.err.println("Could not find task with id " + taskId);
                     } else {
                         System.err.println(ERROR_STATUS_MSG + ce.getStatusCode());
                     }
                 }).onServerError(se -> System.err.println(ERROR_STATUS_MSG + se.getStatusCode()))
                 .onGenericError(e -> System.err.println(GENERIC_ERROR_MSG));
         FileOutputStream fos = new FileOutputStream(new File(outputFile));
-        client.download("/jobs/" + jobId + "/output", fos);
+        client.download("/tasks/" + taskId + "/" + outputName, fos);
         fos.close();
     }
 

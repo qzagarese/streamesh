@@ -16,15 +16,15 @@ public interface StreameshOrchestrator {
 
     Set<Micropipe> getDefinitions();
 
-    Set<JobDescriptor> getAllJobs();
+    Set<TaskDescriptor> getAllTasks();
 
-    Set<JobDescriptor> getJobsByDefinition(String definitionId);
+    Set<TaskDescriptor> getTasksByDefinition(String definitionId);
 
-    JobDescriptor scheduleJob(String definitionId, Map<?, ?> input);
+    TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input);
 
-    JobDescriptor scheduleSecureJob(String definitionId, Map<?, ?> input, String publicKey);
+    TaskDescriptor scheduleSecureTask(String definitionId, Map<?, ?> input, String publicKey);
 
-    JobDescriptor getJob(String jobId);
+    TaskDescriptor getTask(String taskId);
 
-    InputStream getJobOutput(String jobDescriptorId);
+    InputStream getTaskOutput(String taskDescriptorId, String outputName);
 }

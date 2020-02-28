@@ -1,15 +1,16 @@
 package io.scicast.streamesh.core;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.function.Consumer;
 
 public interface OrchestrationDriver {
 
     String retrieveContainerImage(String image);
 
-    JobDescriptor scheduleJob(String image, String command, OutputMapping outputMapping, Consumer<JobDescriptor> onStatusUpdate);
+    TaskDescriptor scheduleTask(String image, String command, List<OutputMapping> outputMapping, Consumer<TaskDescriptor> onStatusUpdate);
 
-    InputStream getJobOutput(String jobId);
+    InputStream getTaskOutput(String taskId, String outputName);
 
     void setStreameshServerAddress(String ipAddress);
 }

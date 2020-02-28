@@ -9,14 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Output {
 
-
-    private OutputLocationType locationType = OutputLocationType.STDOUT;
-    private String outputFilePath;
-
-    enum OutputLocationType {
-
-        STDOUT, FILE_SYSTEM;
-
-    }
-
+    private String name;
+    private String outputDir;
+    private String fileNamePattern;
 }

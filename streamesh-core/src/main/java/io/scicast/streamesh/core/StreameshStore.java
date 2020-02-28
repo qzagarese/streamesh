@@ -14,11 +14,11 @@ public interface StreameshStore {
 
     Set<Micropipe> getAllDefinitions();
 
-    Set<JobDescriptor> getAllJobs();
+    Set<TaskDescriptor> getAllJobs();
 
-    Set<JobDescriptor> getJobsByDefinition(String definitionId);
+    Set<TaskDescriptor> getJobsByDefinition(String definitionId);
 
-    JobDescriptor getJobById(String jobId);
+    TaskDescriptor getJobById(String jobId);
 
-    void updateJob(String definitionId, JobDescriptor descriptor);
+    void updateJob(String definitionId, TaskDescriptor descriptor);
 }

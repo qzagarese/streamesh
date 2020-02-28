@@ -4,9 +4,10 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
-import io.scicast.streamesh.core.JobDescriptor;
+import io.scicast.streamesh.core.TaskDescriptor;
 import io.scicast.streamesh.core.OrchestrationDriver;
 import io.scicast.streamesh.core.OutputMapping;
+import io.scicast.streamesh.core.exception.NotFoundException;
 import io.scicast.streamesh.docker.driver.internal.JobRunner;
 import io.scicast.streamesh.docker.driver.internal.DockerClientProviderFactory;
 import io.scicast.streamesh.docker.driver.internal.DockerPullStatusManager;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -24,13 +26,11 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
 
     public static final String TMP_DIR_PROPERTY = "java.io.tmpdir";
     public static final String STREAMESH_DIR = "streamesh";
-    public static final String OUTPUT_FILE_NAME = "output.log";
-    public static final String TMP = "/tmp/";
     public static final String STREAMESH_SERVER_HOST_NAME = "streamesh-server";
     private Logger logger = Logger.getLogger(getClass().getName());
     private DockerClient client = DockerClientProviderFactory.create().getClient();
 
-    private Map<String, JobOutputManager> outputManagers = new HashMap<>();
+    private Map<String, List<JobOutputManager>> outputManagers = new HashMap<>();
     private String streameshServerAddress;
 
     public String retrieveContainerImage(String imageName) {
@@ -59,22 +59,29 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         return respFut.join();
     }
 
-    public JobDescriptor scheduleJob(String image, String command, OutputMapping outputMapping, Consumer<JobDescriptor> onStatusUpdate) {
-        JobDescriptor descriptor = JobDescriptor.builder()
+    public TaskDescriptor scheduleTask(String image, String command, List<OutputMapping> outputMapping, Consumer<TaskDescriptor> onStatusUpdate) {
+        TaskDescriptor descriptor = TaskDescriptor.builder()
                 .id(UUID.randomUUID().toString())
                 .build();
-        String hostOutputDirPath = createOutputDirectory(descriptor.getId());
+        String parentOutputDirectory = createOutputDirectory(descriptor.getId(),
+                System.getProperty(TMP_DIR_PROPERTY) + File.separator +STREAMESH_DIR);
 
-        CreateContainerCmd create = client.createContainerCmd(image);
-        create = create.withCmd(command.split(" "));
-        create = setupOutputVolume(create, hostOutputDirPath, outputMapping.getOutputDir());
-        create = setupServerIpMapping(create, streameshServerAddress);
+        List<JobOutputManager> managersList = new ArrayList<>();
 
-        CreateContainerResponse createContainerResponse = create.exec();
+        AtomicReference<CreateContainerCmd> create = new AtomicReference<>(client.createContainerCmd(image));
+        create.set(create.get().withCmd(command.split(" ")));
+        outputMapping.forEach(om -> {
+            String outputDirectory = createOutputDirectory(om.getName(), parentOutputDirectory);
+            create.set(setupOutputVolume(create.get(), outputDirectory, om.getOutputDir()));
+            JobOutputManager manager = new JobOutputManager(om.getName(), outputDirectory + File.separator + om.getFileNamePattern());
+            managersList.add(manager);
+        });
+        create.set(setupServerIpMapping(create.get(), streameshServerAddress));
+
+        CreateContainerResponse createContainerResponse = create.get().exec();
         descriptor = descriptor.withContainerId(createContainerResponse.getId());
 
-        JobOutputManager manager = new JobOutputManager(hostOutputDirPath + File.separator + outputMapping.getFileNamePattern());
-        outputManagers.put(descriptor.getId(), manager);
+        outputManagers.put(descriptor.getId(), managersList);
 
         JobRunner runner = new JobRunner(client, descriptor, jd -> {
             onStatusUpdate.accept(this.handleUpdate(jd));
@@ -94,10 +101,10 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
 
     }
 
-    private JobDescriptor handleUpdate(JobDescriptor descriptor) {
-        if (descriptor.getStatus().equals(JobDescriptor.JobStatus.COMPLETE)) {
-            JobOutputManager manager = outputManagers.get(descriptor.getId());
-            manager.notifyTermination();
+    private TaskDescriptor handleUpdate(TaskDescriptor descriptor) {
+        if (descriptor.getStatus().equals(TaskDescriptor.JobStatus.COMPLETE)) {
+            List<JobOutputManager> managers = outputManagers.get(descriptor.getId());
+            managers.forEach(m -> m.notifyTermination());
         }
         return descriptor;
     }
@@ -109,27 +116,30 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
                 .map(ArrayList::new)
                 .orElse(new ArrayList<>());
 
-        binds.add(new Bind(hostOutputPath, new Volume(containerOutputPath), AccessMode.fromBoolean(true)));
+        binds.add(new Bind(hostOutputPath, new Volume(containerOutputPath), AccessMode.rw));
         HostConfig hc = cmd.getHostConfig().withBinds(binds);
         return cmd.withHostConfig(hc);
     }
 
-    private String createOutputDirectory(String jobId) {
-        File dir = new File(System.getProperty(TMP_DIR_PROPERTY)
+    private String createOutputDirectory(String name, String parentDir) {
+        File dir = new File(parentDir
                 + File.separator
-                + STREAMESH_DIR
-                + File.separator
-                + jobId + File.separator);
+                + name + File.separator);
         boolean dirsCreated = dir.mkdirs();
         if (!dirsCreated) {
-            throw new RuntimeException("Could not create output directory for job " + jobId);
+            throw new RuntimeException("Could not create output directory for job " + name);
         }
 
         return  dir.getAbsolutePath();
     }
 
-    public InputStream getJobOutput(String jobId) {
-        return outputManagers.get(jobId).requestStream();
+    public InputStream getTaskOutput(String taskId, String outputName) {
+        return outputManagers.get(taskId).stream()
+                .filter(om -> om.getOutputName().equalsIgnoreCase(outputName))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("No output named %s for taskId %s available.", outputName, taskId)))
+                .requestStream();
     }
 
     public void setStreameshServerAddress(String ipAddress) {

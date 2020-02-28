@@ -1,7 +1,7 @@
 package io.scicast.streamesh.core.internal;
 
 import io.scicast.streamesh.core.Micropipe;
-import io.scicast.streamesh.core.JobDescriptor;
+import io.scicast.streamesh.core.TaskDescriptor;
 import io.scicast.streamesh.core.StreameshStore;
 
 import java.util.HashMap;
@@ -14,8 +14,8 @@ public class InMemoryStreameshStore implements StreameshStore {
 
     private Map<String, Micropipe> definitions = new HashMap<String, Micropipe>();
     private Map<String, Micropipe> definitionsByName = new HashMap<String, Micropipe>();
-    private Map<String, JobDescriptor> jobs = new HashMap<String, JobDescriptor>();
-    private Map<Micropipe, Set<JobDescriptor>> definitionToJobs = new HashMap<Micropipe, Set<JobDescriptor>>();
+    private Map<String, TaskDescriptor> jobs = new HashMap<String, TaskDescriptor>();
+    private Map<Micropipe, Set<TaskDescriptor>> definitionToJobs = new HashMap<Micropipe, Set<TaskDescriptor>>();
 
     public InMemoryStreameshStore() {
     }
@@ -57,25 +57,25 @@ public class InMemoryStreameshStore implements StreameshStore {
     }
 
     @Override
-    public Set<JobDescriptor> getAllJobs() {
+    public Set<TaskDescriptor> getAllJobs() {
         return jobs.values().stream().collect(Collectors.toSet());
     }
 
     @Override
-    public Set<JobDescriptor> getJobsByDefinition(String definitionId) {
+    public Set<TaskDescriptor> getJobsByDefinition(String definitionId) {
         return definitionToJobs.get(getDefinitionById(definitionId));
     }
 
     @Override
-    public JobDescriptor getJobById(String jobId) {
+    public TaskDescriptor getJobById(String jobId) {
         return jobs.get(jobId);
     }
 
     @Override
-    public void updateJob(String definitionId, JobDescriptor descriptor) {
+    public void updateJob(String definitionId, TaskDescriptor descriptor) {
         jobs.put(descriptor.getId(), descriptor);
         Micropipe definition = getDefinitionById(definitionId);
-        Set<JobDescriptor> jobDescriptors = definitionToJobs.get(definition);
+        Set<TaskDescriptor> jobDescriptors = definitionToJobs.get(definition);
         if (jobDescriptors == null) {
             jobDescriptors = new HashSet<>();
         } else {

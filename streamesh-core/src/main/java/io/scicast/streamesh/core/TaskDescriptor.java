@@ -8,7 +8,7 @@ import lombok.*;
 @Builder
 @With
 @EqualsAndHashCode(of = "id")
-public class JobDescriptor {
+public class TaskDescriptor {
 
     private String id;
     private JobStatus status;

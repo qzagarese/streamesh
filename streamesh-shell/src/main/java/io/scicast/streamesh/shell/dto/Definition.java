@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
@@ -16,6 +18,6 @@ public class Definition {
     private String description;
     private int maxConcurrentJobs ;
     private Input inputMapping;
-    private Output outputMapping;
+    private List<Output> outputMapping;
 
 }

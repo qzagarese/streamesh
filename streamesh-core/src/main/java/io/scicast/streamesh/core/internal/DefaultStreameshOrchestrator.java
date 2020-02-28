@@ -39,9 +39,8 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         String imageId = driver.retrieveContainerImage(definition.getImage());
         String definitionId = UUID.randomUUID().toString();
 
-        Micropipe callableDefinition = definition.withImageId(imageId)
-                .withId(definitionId);
-        streameshStore.storeDefinition(definition);
+        streameshStore.storeDefinition(definition.withImageId(imageId)
+                .withId(definitionId));
         return definitionId;
     }
 
@@ -69,17 +68,17 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         return streameshStore.getAllDefinitions();
     }
 
-    public Set<JobDescriptor> getAllJobs() {
+    public Set<TaskDescriptor> getAllTasks() {
         return streameshStore.getAllJobs();
     }
 
-    public Set<JobDescriptor> getJobsByDefinition(String definitionId) {
+    public Set<TaskDescriptor> getTasksByDefinition(String definitionId) {
         return streameshStore.getJobsByDefinition(definitionId);
     }
 
-    public JobDescriptor scheduleJob(String definitionId, Map<?, ?> input) {
+    public TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input) {
         Micropipe definition = getDefinition(definitionId);
-        JobDescriptor descriptor = driver.scheduleJob(definition.getImage(),
+        TaskDescriptor descriptor = driver.scheduleTask(definition.getImage(),
                 buildCommand(definition, input),
                 definition.getOutputMapping(),
                 desc -> updateIndexes(definition, desc));
@@ -87,22 +86,22 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         return descriptor;
     }
 
-    public JobDescriptor scheduleSecureJob(String definitionId, Map<?, ?> input, String publicKey) {
+    public TaskDescriptor scheduleSecureTask(String definitionId, Map<?, ?> input, String publicKey) {
         CryptoUtil.WrappedAesGCMKey wrappedKey = CryptoUtil.createWrappedKey(publicKey);
-        JobDescriptor descriptor = scheduleJob(definitionId, input);
+        TaskDescriptor descriptor = scheduleTask(definitionId, input);
         descriptor.setKey(wrappedKey);
         return descriptor;
     }
 
-    public JobDescriptor getJob(String jobId) {
-        JobDescriptor job = streameshStore.getJobById(jobId);
+    public TaskDescriptor getTask(String taskId) {
+        TaskDescriptor job = streameshStore.getJobById(taskId);
         if (job == null) {
-            throw new NotFoundException(String.format("No job found for id %s", jobId));
+            throw new NotFoundException(String.format("No job found for id %s", taskId));
         }
         return job;
     }
 
-    private void updateIndexes(Micropipe definition, JobDescriptor descriptor) {
+    private void updateIndexes(Micropipe definition, TaskDescriptor descriptor) {
         streameshStore.updateJob(definition.getId(), descriptor);
     }
 
@@ -130,9 +129,9 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         return (inputMapping.getBaseCmd().trim() + " " + params.trim()).trim();
     }
 
-    public InputStream getJobOutput(String jobDescriptorId) {
-        JobDescriptor job = getJob(jobDescriptorId);
-        InputStream stream = driver.getJobOutput(jobDescriptorId);
+    public InputStream getTaskOutput(String taskDescriptorId, String outputName) {
+        TaskDescriptor job = getTask(taskDescriptorId);
+        InputStream stream = driver.getTaskOutput(taskDescriptorId, outputName);
         if (job.getKey() != null) {
             stream = CryptoUtil.getCipherInputStream(stream, job.getKey());
         }

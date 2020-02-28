@@ -59,9 +59,6 @@ public class TailingInputStream extends InputStream {
                     }
                     try {
                         fileLength = raf.length();
-//                    if (fileLength < lastKnownPosition.get()) {
-//                        lastKnownPosition.set(0);
-//                    }
                         if (fileLength > lastKnownPosition) {
                             raf.seek(lastKnownPosition);
                             read = raf.read(buf);
@@ -128,7 +125,7 @@ public class TailingInputStream extends InputStream {
         ReadResult rr = null;
         try {
             rr = blocks.take();
-            logger.info(String.format("Reading block %s.", rr.getBlockNumber()));
+            logger.finest(String.format("Reading block %s.", rr.getBlockNumber()));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
