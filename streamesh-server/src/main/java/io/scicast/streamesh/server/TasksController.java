@@ -67,13 +67,13 @@ public class TasksController {
         response.flushBuffer();
     }
 
-    @GetMapping("/jobs/{jobId}")
-    public ResponseEntity<TaskDescriptor> getJobDetails(@PathVariable("jobId") String jobId) {
-        return ResponseEntity.ok(orchestrator.getTask(jobId));
+    @GetMapping("/tasks/{taskId}")
+    public ResponseEntity<TaskDescriptor> getTaskDetails(@PathVariable("taskId") String taskId) {
+        return ResponseEntity.ok(orchestrator.getTask(taskId));
     }
 
-    @GetMapping("/jobs")
-    public ResponseEntity<Collection<TaskDescriptor>> getAllJobs() {
+    @GetMapping("/tasks")
+    public ResponseEntity<Collection<TaskDescriptor>> getAllTasks() {
         return ResponseEntity.ok(orchestrator.getAllTasks());
     }
 

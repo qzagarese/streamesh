@@ -12,6 +12,8 @@ public class TaskDescriptor {
 
     private String id;
     private JobStatus status;
+    private String serviceName;
+    private String serviceId;
     private String containerId;
     private String errorMessage;
     private CryptoUtil.WrappedAesGCMKey key;

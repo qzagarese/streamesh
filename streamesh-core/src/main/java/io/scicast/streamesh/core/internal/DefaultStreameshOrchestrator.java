@@ -81,7 +81,9 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         TaskDescriptor descriptor = driver.scheduleTask(definition.getImage(),
                 buildCommand(definition, input),
                 definition.getOutputMapping(),
-                desc -> updateIndexes(definition, desc));
+                desc -> updateIndexes(definition, desc))
+                .withServiceName(definition.getName())
+                .withServiceId(definition.getId());
         updateIndexes(definition, descriptor);
         return descriptor;
     }
@@ -102,7 +104,9 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     private void updateIndexes(Micropipe definition, TaskDescriptor descriptor) {
-        streameshStore.updateJob(definition.getId(), descriptor);
+        streameshStore.updateJob(definition.getId(),
+                descriptor.withServiceId(definition.getId())
+                    .withServiceName(definition.getName()));
     }
 
     private String buildCommand(Micropipe definition, Map<?, ?> input) {
