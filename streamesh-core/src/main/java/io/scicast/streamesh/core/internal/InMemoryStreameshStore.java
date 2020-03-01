@@ -24,7 +24,7 @@ public class InMemoryStreameshStore implements StreameshStore {
     public void storeDefinition(Micropipe definition) {
         Micropipe previous = definitionsByName.get(definition.getName());
         if(previous != null) {
-            definitions.remove(previous);
+            definitions.remove(previous.getId());
         }
         definitions.put(definition.getId(), definition);
         definitionsByName.put(definition.getName(), definition);
