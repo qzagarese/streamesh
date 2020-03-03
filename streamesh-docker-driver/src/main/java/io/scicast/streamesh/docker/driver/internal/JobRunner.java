@@ -5,6 +5,7 @@ import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.model.Container;
 import io.scicast.streamesh.core.TaskDescriptor;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Timer;
@@ -32,25 +33,26 @@ public class JobRunner {
         this.onStatusUpdate = onStatusUpdate;
     }
 
-    public void init() {
+    public TaskDescriptor init() {
         Optional<Container> c = findContainer();
         if (c.isEmpty()) {
             descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.FAILED)
                     .withErrorMessage(
                             String.format(CONTAINER_NOT_FOUND_MSG, descriptor.getContainerId(), descriptor.getId()));
             onStatusUpdate.accept(descriptor);
-            return;
+            return descriptor;
         }
 
         StartContainerCmd start = client.startContainerCmd(descriptor.getContainerId());
         ExecutorService svc = Executors.newSingleThreadExecutor();
         Future<?> startFut = svc.submit(() -> {
-            new StartObserver(descriptor, jd -> {
+            new StartObserver(jd -> {
                 onStatusUpdate.accept(jd);
             });
             try {
                 start.exec();
                 descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.RUNNING);
+                descriptor = descriptor.withStarted(LocalDateTime.now());
                 onStatusUpdate.accept(descriptor);
             } catch (Exception e) {
                descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.FAILED)
@@ -66,6 +68,7 @@ public class JobRunner {
         } catch (ExecutionException e) {
             logger.warning(e.getMessage());
         }
+        return descriptor;
     }
 
 
@@ -80,11 +83,9 @@ public class JobRunner {
 
     class StartObserver {
 
-        private TaskDescriptor descriptor;
         private Consumer<TaskDescriptor> onContainerStateChange;
 
-        StartObserver(TaskDescriptor descriptor, Consumer<TaskDescriptor> onContainerStateChange) {
-            this.descriptor = descriptor;
+        StartObserver(Consumer<TaskDescriptor> onContainerStateChange) {
             this.onContainerStateChange = onContainerStateChange;
             track();
         }

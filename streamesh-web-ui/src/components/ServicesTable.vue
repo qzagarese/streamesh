@@ -1,4 +1,4 @@
-<template>
+<template v-on:show="updateList" >
   <div>
     <el-upload drag action :http-request="postService" accept="application/x-yaml">
 
@@ -42,7 +42,7 @@
 
 <script>
 export default {
-  name: "ServiceTable",
+  name: "ServicesTable",
   data: () => {
     return {
       tableData: [],
@@ -63,11 +63,9 @@ export default {
         });
     },
     goToDetails: function(id) {
-      console.log();
       this.$router.push({ path: `/services/${id}` });
     },
     postService: function(file) {
-      console.log(file);
       const reader = new FileReader()
       reader.onload = e => {
         fetch("http://localhost:8081/api/v1/definitions", {

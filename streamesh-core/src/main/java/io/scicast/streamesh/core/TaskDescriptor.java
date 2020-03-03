@@ -3,6 +3,8 @@ package io.scicast.streamesh.core;
 import io.scicast.streamesh.core.crypto.CryptoUtil;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @Builder
@@ -17,6 +19,8 @@ public class TaskDescriptor {
     private String containerId;
     private String errorMessage;
     private CryptoUtil.WrappedAesGCMKey key;
+    private LocalDateTime started;
+    private LocalDateTime exited;
 
     public enum JobStatus {
         FAILED, RUNNING, COMPLETE

@@ -16,6 +16,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -86,8 +87,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         JobRunner runner = new JobRunner(client, descriptor, jd -> {
             onStatusUpdate.accept(this.handleUpdate(jd));
         });
-        runner.init();
-        return descriptor;
+        return runner.init();
     }
 
     private CreateContainerCmd setupServerIpMapping(CreateContainerCmd cmd, String streameshServerAddress) {
@@ -103,6 +103,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
 
     private TaskDescriptor handleUpdate(TaskDescriptor descriptor) {
         if (descriptor.getStatus().equals(TaskDescriptor.JobStatus.COMPLETE)) {
+            descriptor = descriptor.withExited(LocalDateTime.now());
             List<JobOutputManager> managers = outputManagers.get(descriptor.getId());
             managers.forEach(m -> m.notifyTermination());
         }

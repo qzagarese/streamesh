@@ -1,32 +1,30 @@
 <template>
   <div id="app">
     <el-header>
-        <p>Streamesh</p>
+        <el-image
+      style="width: 150px; height: 50px"
+      src="./assets/streamesh.png"></el-image>
     </el-header>
     <el-container>
       <el-aside width="200px">
         <el-menu>
           <el-menu-item index="1">
             <template slot="title">
-              <i class="el-icon-message"></i><router-link to="/services">Services</router-link>
+              <i class="el-icon-eleme"></i><router-link to="/services">Services</router-link>
             </template>
           </el-menu-item>
 
-          <el-submenu index="2">
+          <el-menu-item index="2">
             <template slot="title">
-              <i class="el-icon-menu"></i>Tasks
+              <i class="el-icon-menu"></i><router-link to="/tasks">Tasks</router-link>
             </template>
-            <el-menu-item-group>
-              <template slot="title">Service 1</template>
-            </el-menu-item-group>
-            <el-menu-item-group title="Service 2"></el-menu-item-group>
-          </el-submenu>
+          </el-menu-item>
 
-          <el-submenu index="3">
+          <el-menu-item index="3">
             <template slot="title">
-              <i class="el-icon-menu"></i>Flows
+              <i class="el-icon-film"></i>Flows
             </template>
-          </el-submenu>
+          </el-menu-item>
         </el-menu>
       </el-aside>
       <el-main>
