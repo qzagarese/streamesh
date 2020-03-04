@@ -20,6 +20,12 @@
             placeholder="Type to search"
           />
         </template>
+        <template slot-scope="scope">
+          <el-button
+            @click.native.prevent="goToDetails(scope.row.id)"
+            size="small"
+          >Details</el-button>
+        </template>
       </el-table-column>
     </el-table>
   </div>
@@ -47,7 +53,10 @@ export default {
         .then(json => {
           this.tableData = json;
         });
-    }
+    },
+    goToDetails: function(id) {
+      this.$router.push({ path: `/tasks/${id}` });
+    },
   }
 }
 </script>

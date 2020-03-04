@@ -30,9 +30,12 @@
         <template slot-scope="scope">
           <el-button
             @click.native.prevent="goToDetails(scope.row.id)"
-            type="text"
             size="small"
           >Details</el-button>
+          <el-button
+            @click.native.prevent="goToRunTask(scope.row.id)"
+            size="small"
+          >Run</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -64,6 +67,9 @@ export default {
     },
     goToDetails: function(id) {
       this.$router.push({ path: `/services/${id}` });
+    },
+    goToRunTask: function(id) {
+      this.$router.push({ path: `/services/${id}/tasks` });
     },
     postService: function(file) {
       const reader = new FileReader()

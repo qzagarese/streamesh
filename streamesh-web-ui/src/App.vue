@@ -22,11 +22,13 @@
               </template>
             </el-menu-item>
           </router-link>
+          <router-link to="/flows">
           <el-menu-item index="3">
             <template slot="title">
               <i class="el-icon-film"></i>Flows
             </template>
           </el-menu-item>
+          </router-link>
         </el-menu>
       </el-aside>
       <el-main>

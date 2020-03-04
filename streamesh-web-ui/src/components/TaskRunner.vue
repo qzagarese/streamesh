@@ -3,6 +3,7 @@
     <el-card class="box-card">
       <div slot="header" class="clearfix">
         <span>{{ details.name }}</span>
+        <el-button style="float: right; padding: 3px 0" type="text" @click="goBack()">Back</el-button>
       </div>
 
       <div class="text item">
@@ -19,20 +20,24 @@
         style="width: 100%"
       >
         <el-table-column label="Input">
-          <el-table-column prop="name" label="Name"></el-table-column>
+          <el-table-column prop="name" label="Name" width="150px"></el-table-column>
           <el-table-column prop="internalName" label="Value">
             <template slot-scope="scope">
-              <el-input
+              <div>
+              <el-input 
                 :placeholder="scope.row.internalName"
                 v-model="scope.row.inputValue"
                 v-on:input="updateOptionsList(scope, scope.row)"
-              ></el-input>
+              >
+              </el-input>
+                           
+              </div>
             </template>
           </el-table-column>
-          <el-table-column prop="optional" label="Required">
-            <template slot-scope="scope">{{scope.row.optional == 'true' ? 'No' : 'Yes'}}</template>
+          <el-table-column prop="optional" label="Required" width="80px">
+            <template slot-scope="scope">{{scope.row.optional ? 'No' : 'Yes'}}</template>
           </el-table-column>
-          <el-table-column prop="repeatable" label="Multiple values">
+          <el-table-column prop="repeatable" label="Multiple values" width="120px">
             <template slot-scope="scope">
               <el-button
                 v-if="!scope.row.removable"
@@ -51,10 +56,11 @@
 
       <el-divider></el-divider>
 
-      <el-button :disabled="!this.runnable" 
+      <el-button
+        :disabled="!this.runnable"
         style="float: right; margin-bottom: 20px"
         @click="runTask()"
-        >Run</el-button>
+      >Run</el-button>
     </el-card>
   </div>
 </template>
@@ -93,41 +99,46 @@ export default {
           }
           this.details = json;
           this.command = json.inputMapping.baseCmd;
+          this.computeRunnable();
         });
     },
+    goBack: function() {
+      this.$router.back();
+    },
     runTask: function() {
-      let body = {}
+      let body = {};
       this.details.inputMapping.parameters.forEach(element => {
         if (element.repeatable) {
           if (!body[element.name]) {
-            body[element.name] = []  
+            body[element.name] = [];
           }
-          body[element.name].push(element.inputValue)
+          body[element.name].push(element.inputValue);
         } else {
-          body[element.name] = element.inputValue
+          body[element.name] = element.inputValue;
         }
-      })
-
-      console.log(JSON.stringify(body))
+      });
 
       fetch("http://localhost:8081/api/v1/definitions/" + this.id + "/tasks", {
-          headers: {
-            "Content-Type": "application/json"
-          },
-          method: "POST",
-          body: JSON.stringify(body)
-        }).then(response => {
+        headers: {
+          "Content-Type": "application/json"
+        },
+        method: "POST",
+        body: JSON.stringify(body)
+      })
+        .then(response => {
           if (response.ok) {
-            return response.json()            
+            return response.json();
           } else {
-            throw response
-          } 
-        }).then(json => {
-          this.$message('Task scheduled. Id: ' + json.taskId)
-          this.updateDetails()
-        }).catch(() => {
-          this.$message('Oops, something went wrong :-(')
+            throw response;
+          }
         })
+        .then(json => {
+          this.$message("Task scheduled. Id: " + json.taskId);
+          this.updateDetails();
+        })
+        .catch(() => {
+          this.$message("Oops, something went wrong :-(");
+        });
     },
     addParameterRow: function(scope, row) {
       this.details.inputMapping.parameters.push({
@@ -167,6 +178,21 @@ export default {
         newOptions += item.internalName + " " + item.inputValue + " ";
       });
       this.options = newOptions;
+    },
+    computeRunnable: function() {
+      let parameters = this.details.inputMapping.parameters;
+      for (let index = 0; index < parameters.length; index++) {
+        const element = parameters[index];
+        if (
+          !element.optional &&
+          !element.removable &&
+          (!element.inputValue || element.inputValue === "")
+        ) {
+          this.runnable = false;
+          return;
+        }
+      }
+      this.runnable = true;
     }
   },
   computed: {
@@ -176,19 +202,7 @@ export default {
   },
   watch: {
     "optionsList.length": function() {
-      let parameters = this.details.inputMapping.parameters;
-      for (let index = 0; index < parameters.length; index++) {
-        const element = parameters[index];
-        if (
-          !element.optional && 
-          !element.removable &&
-          (!element.inputValue || element.inputValue === "")
-        ) {
-          this.runnable = false;
-          return;
-        }
-      }
-      this.runnable = true;
+      this.computeRunnable();
     }
   }
 };
