@@ -8,18 +8,20 @@
     <el-container>
       <el-aside width="200px">
         <el-menu>
-          <el-menu-item index="1">
-            <template slot="title">
-              <i class="el-icon-eleme"></i><router-link to="/services">Services</router-link>
-            </template>
-          </el-menu-item>
-
-          <el-menu-item index="2">
-            <template slot="title">
-              <i class="el-icon-menu"></i><router-link to="/tasks">Tasks</router-link>
-            </template>
-          </el-menu-item>
-
+          <router-link to="/services">
+            <el-menu-item index="1">
+              <template slot="title">
+                <i class="el-icon-eleme"></i>Services
+              </template>
+            </el-menu-item>
+          </router-link>
+          <router-link to="/tasks">
+            <el-menu-item index="2">
+              <template slot="title">
+                <i class="el-icon-menu"></i>Tasks
+              </template>
+            </el-menu-item>
+          </router-link>
           <el-menu-item index="3">
             <template slot="title">
               <i class="el-icon-film"></i>Flows

@@ -3,7 +3,8 @@
     <el-card class="box-card">
       <div slot="header" class="clearfix">
         <span>{{ details.name }}</span>
-        <el-button style="float: right; padding: 3px 0" type="text">Run task</el-button>
+        <el-button style="float: right; padding: 3px 0" type="text" 
+        @click="goToTaskCreation(id)">Run task</el-button>
       </div>
       <div class="text item">
         <b>Description:</b>
@@ -17,26 +18,29 @@
         <b>Image id:</b>
         {{ details.imageId }}
       </div>
-      <div class="text item">
+      <div v-if="details.inputMapping" class="text item">
         <b>Command:</b>
         {{ details.inputMapping.baseCmd}}
       </div>
 
-            <el-divider></el-divider>
 
-      <el-table :data="details.inputMapping.parameters" stripe style="width: 100%">
+      <el-divider></el-divider>
+
+      <el-table v-if="details.inputMapping" :data="details.inputMapping.parameters" stripe style="width: 100%">
         <el-table-column label="Input">
           <el-table-column prop="name" label="Name"></el-table-column>
           <el-table-column prop="internalName" label="Command line"></el-table-column>
-          <el-table-column prop="optional" label="Optional">
-            <template slot-scope="scope">{{scope.row.optional == 'true'? 'Yes' : 'No'}}</template>
+          <el-table-column prop="optional" label="Required">
+            <template slot-scope="scope">{{scope.row.optional ? 'No' : 'Yes'}}</template>
           </el-table-column>
           <el-table-column prop="repeatable" label="Multiple values">
-            <template slot-scope="scope">{{scope.row.repeatable == 'true'? 'Yes' : 'No'}}</template>
+            <template slot-scope="scope">{{scope.row.repeatable ? 'Yes' : 'No'}}</template>
           </el-table-column>
         </el-table-column>
       </el-table>
+
       <el-divider></el-divider>
+
       <el-table :data="details.outputMapping" stripe style="width: 100%">
         <el-table-column label="Output">
           <el-table-column prop="name" label="Name"></el-table-column>
@@ -72,6 +76,9 @@ export default {
         .then(json => {
           this.details = json;
         });
+    },
+    goToTaskCreation: function(id) {
+        this.$router.push({ path: `/services/${id}/tasks` })
     }
   }
 };

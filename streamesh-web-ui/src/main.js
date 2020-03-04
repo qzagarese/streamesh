@@ -7,6 +7,7 @@ import './plugins/element.js'
 import ServicesTable from './components/ServicesTable.vue'
 import ServiceDetails from './components/ServiceDetails.vue'
 import TasksTable from './components/TasksTable.vue'
+import TaskRunner from './components/TaskRunner.vue'
 
 Vue.config.productionTip = false
 Vue.use(VueRouter)
@@ -15,7 +16,8 @@ Vue.use(ElementUI)
 const routes = [
   { path: '/services', component: ServicesTable },
   { path: '/tasks', component: TasksTable},
-  { path: '/services/:id', component: ServiceDetails, props: true }
+  { path: '/services/:id', component: ServiceDetails, props: true },
+  { path: '/services/:id/tasks', component: TaskRunner, props: true}
 ]
 
 const router = new VueRouter({
