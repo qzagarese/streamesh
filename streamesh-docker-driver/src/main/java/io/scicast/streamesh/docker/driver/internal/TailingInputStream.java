@@ -130,7 +130,9 @@ public class TailingInputStream extends InputStream {
             e.printStackTrace();
         }
 
-        if (buf.length >= rr.getReadBytes()) {
+        if (rr.getReadBytes() == -1) {
+            return -1;
+        }else if (buf.length >= rr.getReadBytes()) {
             System.arraycopy(rr.getBuffer(), 0, buf, 0, rr.getReadBytes());
             readBytes += rr.getReadBytes();
             return rr.getReadBytes();
