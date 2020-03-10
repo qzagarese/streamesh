@@ -32,7 +32,7 @@
         <el-table-column label="Output">
           <el-table-column type="expand" prop="stream" v-if="details.status == 'RUNNING'">
             <template slot-scope="scope">
-              <p v-for="line in scope.row.stream" :key="line">{{ line }}</p>
+              <p v-for="item in scope.row.stream" :key="item.index">{{ item.date.toLocaleString() + ' - ' + item.value }}</p>
             </template>
           </el-table-column>
           <el-table-column prop="name" label="Name"></el-table-column>
@@ -45,13 +45,14 @@
                 @click="download(scope.row.name)"
               >Download</el-button>
               <el-button
-                v-if="details.status == 'RUNNING' && !scope.streaming"
+                v-if="details.status == 'RUNNING'"
+                v-show="!status(scope.$index)"
                 @click="startStreaming(scope.row, scope)"
               >Show Stream</el-button>
               <el-button
-                v-if="scope.streaming"
-                @click="stopStreaming(scope.$index, scope.name)"
-              >Show Stream</el-button>
+                v-show="status(scope.$index)"
+                @click="stopStreaming(scope.row, scope.$index, scope.row.name)"
+              >Hide Stream</el-button>
             </template>
           </el-table-column>
         </el-table-column>
@@ -67,7 +68,8 @@ export default {
     return {
       details: {},
       serviceDetails: {},
-      controllers: {}
+      controllers: {},
+      statuses: []
     };
   },
   props: {
@@ -94,45 +96,65 @@ export default {
         .then(json => {
           json.outputMapping.forEach(element => {
             element.stream = [];
-            element.streaming = false
+            element.streaming = false;
           });
           this.serviceDetails = json;
         });
     },
     startStreaming: function(row, scope) {
-      console.log(scope);
+      this.$set(
+        this.serviceDetails.outputMapping[scope.$index],
+        "streaming",
+        true
+      );
+      let abortCtrl = new AbortController()
+      let signal = abortCtrl.signal
+
       this.$refs.detailsTable.toggleRowExpansion(row, true);
-      this.serviceDetails.outputMapping[scope.$index].streaming = true
-      fetch("http://localhost:8081/api/v1/tasks/" + this.id + "/" + row.name)
+      fetch("http://localhost:8081/api/v1/tasks/" + this.id + "/" + row.name, { signal })
         .then(response => {
+          console.log(response)
           const reader = response.body.getReader();
           let vueComponent = this;
-          return new ReadableStream({
+          let stream = new ReadableStream({
             start(controller) {
-              vueComponent.controllers[row.name] = controller
+              vueComponent.controllers[row.name] = controller;
               function pump() {
-                  reader.read().then(({ done, value }) => {
-                  
+                if (!vueComponent.serviceDetails.outputMapping[scope.$index].streaming) {
+                  stream.cancel()
+                  abortCtrl.abort()
+                  return
+                }
+                reader.read().then(({ done, value }) => {
                   if (done) {
                     controller.close();
                     return;
                   }
-                  vueComponent.renderLogValue(row, value)
+                  vueComponent.renderLogValue(row, value);
                   pump();
                 });
               }
-              pump()
+              pump();
             }
           });
-        }).catch(err => console.error(err));
+          return stream
+        })
+        .catch(err => console.error(err));
     },
-    stopStreaming: function(index, name) {
-      this.serviceDetails.outputMapping[index].streaming = false
+    stopStreaming: function(row, index, name) {
+      this.$set(this.serviceDetails.outputMapping[index], "streaming", false);
+      this.$refs.detailsTable.toggleRowExpansion(row, false);
+
       this.controllers[name].close();
     },
     renderLogValue: function(row, blob) {
       let stream = row.stream;
-      stream.push(new TextDecoder("utf-8").decode(blob))
+      let date = new Date()
+      stream.push({
+        date : date,
+        index: date.getTime(),
+        value: new TextDecoder("utf-8").decode(blob)
+      });
       if (stream.length > 10) {
         stream.splice(0, 1);
       }
@@ -145,6 +167,21 @@ export default {
       window.open(
         "http://localhost:8081/api/v1/tasks/" + this.id + "/" + output
       );
+    },
+    status: function(index) {
+      return this.statuses[index];
+    }
+  },
+  watch: {
+    "serviceDetails.outputMapping": {
+      handler: function(val) {
+        let streamStatuses = [];
+        val.forEach(element => {
+          streamStatuses.push(element.streaming);
+        });
+        this.statuses = streamStatuses;
+      },
+      deep: true
     }
   }
 };
