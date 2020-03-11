@@ -4,4 +4,8 @@
 */*spring-shell.log
 test.txt
 test_copy.txt
+**/*.classpath
+**/*.project
+**/*.settings
+**/*.factorypath
 

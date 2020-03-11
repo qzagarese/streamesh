@@ -1,0 +1,7 @@
+name: simple-db-reader
+image: "simple-db-reader:latest"
+inputMapping:
+  baseCmd: java -jar /usr/bin/simple-db-reader-1.0-SNAPSHOT.jar
+outputMapping:
+  outputDir: /tmp
+  outputFileName: data.csv

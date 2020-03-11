@@ -8,5 +8,6 @@ import lombok.Getter;
 public class FlowParticipant {
 
     private String name;
+    private String type;
 
 }

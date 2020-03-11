@@ -1,0 +1,12 @@
+name: http-data-merger
+image: "http-data-merger:latest"
+inputMapping:
+  baseCmd: java -jar /usr/bin/http-data-merger-1.0-SNAPSHOT.jar
+  parameters:
+    - externalName: urls
+      internalName: --url
+      optional: false
+      repeatable: true
+outputMapping:
+  outputDir: /tmp
+  outputFileName: data.csv
