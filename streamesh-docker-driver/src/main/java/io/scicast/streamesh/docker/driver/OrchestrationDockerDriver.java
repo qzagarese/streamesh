@@ -6,7 +6,7 @@ import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.model.*;
 import io.scicast.streamesh.core.TaskDescriptor;
 import io.scicast.streamesh.core.OrchestrationDriver;
-import io.scicast.streamesh.core.OutputMapping;
+import io.scicast.streamesh.core.TaskOutput;
 import io.scicast.streamesh.core.exception.NotFoundException;
 import io.scicast.streamesh.docker.driver.internal.JobRunner;
 import io.scicast.streamesh.docker.driver.internal.DockerClientProviderFactory;
@@ -60,7 +60,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         return respFut.join();
     }
 
-    public TaskDescriptor scheduleTask(String image, String command, List<OutputMapping> outputMapping, Consumer<TaskDescriptor> onStatusUpdate) {
+    public TaskDescriptor scheduleTask(String image, String command, List<TaskOutput> outputMapping, Consumer<TaskDescriptor> onStatusUpdate) {
         TaskDescriptor descriptor = TaskDescriptor.builder()
                 .id(UUID.randomUUID().toString())
                 .build();

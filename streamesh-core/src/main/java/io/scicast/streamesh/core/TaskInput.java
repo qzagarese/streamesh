@@ -10,9 +10,9 @@ import java.util.List;
 @With
 @NoArgsConstructor
 @AllArgsConstructor
-public class InputMapping {
+public class TaskInput {
 
     private String baseCmd;
-    private List<CmdParameter> parameters = new ArrayList<>();
+    private List<TaskParameter> parameters = new ArrayList<>();
 
 }

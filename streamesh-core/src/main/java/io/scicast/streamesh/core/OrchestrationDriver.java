@@ -8,7 +8,7 @@ public interface OrchestrationDriver {
 
     String retrieveContainerImage(String image);
 
-    TaskDescriptor scheduleTask(String image, String command, List<OutputMapping> outputMapping, Consumer<TaskDescriptor> onStatusUpdate);
+    TaskDescriptor scheduleTask(String image, String command, List<TaskOutput> outputMapping, Consumer<TaskDescriptor> onStatusUpdate);
 
     InputStream getTaskOutput(String taskId, String outputName);
 

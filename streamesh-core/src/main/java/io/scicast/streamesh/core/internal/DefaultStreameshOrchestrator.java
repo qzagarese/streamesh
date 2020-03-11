@@ -5,6 +5,7 @@ import io.scicast.streamesh.core.crypto.CryptoUtil;
 import io.scicast.streamesh.core.exception.InvalidCmdParameterException;
 import io.scicast.streamesh.core.exception.MissingParameterException;
 import io.scicast.streamesh.core.exception.NotFoundException;
+import io.scicast.streamesh.core.flow.FlowGraphBuilder;
 
 import java.io.InputStream;
 import java.util.*;
@@ -34,26 +35,41 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         this.driver.setStreameshServerAddress(serverIpAddress);
     }
 
-    public String applyDefinition(Micropipe definition) {
+    public String applyDefinition(Definition definition) {
+        if (definition instanceof Micropipe) {
+            return applyMicropipe((Micropipe) definition);
+        } else if (definition instanceof FlowDefinition){
+            return applyFlowDefinition((FlowDefinition) definition);
+        } else {
+            throw new NotFoundException("Unrecognized definition type " + definition.getType());
+        }
+    }
 
-        String imageId = driver.retrieveContainerImage(definition.getImage());
+    private String applyFlowDefinition(FlowDefinition definition) {
         String definitionId = UUID.randomUUID().toString();
+        definition = definition.withGraph(new FlowGraphBuilder(streameshStore).build(definition));
+        streameshStore.storeDefinition(definition.withId(definitionId));
+        return definitionId;
+    }
 
-        streameshStore.storeDefinition(definition.withImageId(imageId)
+    private String applyMicropipe(Micropipe micropipe) {
+        String imageId = driver.retrieveContainerImage(micropipe.getImage());
+        String definitionId = UUID.randomUUID().toString();
+        streameshStore.storeDefinition(micropipe.withImageId(imageId)
                 .withId(definitionId));
         return definitionId;
     }
 
-    public Micropipe getDefinition(String id) {
-        Micropipe definition = streameshStore.getDefinitionById(id);
+    public Definition getDefinition(String id) {
+        Definition definition = streameshStore.getDefinitionById(id);
         if(definition == null) {
             throw new NotFoundException(String.format("No definition with id %s found", id));
         }
         return definition;
     }
 
-    public Micropipe getDefinitionByName(String name) {
-        Micropipe definition = streameshStore.getDefinitionByName(name);
+    public Definition getDefinitionByName(String name) {
+        Definition definition = streameshStore.getDefinitionByName(name);
         if(definition == null) {
             throw new NotFoundException(String.format("No definition found for name %s", name));
         }
@@ -64,7 +80,7 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         streameshStore.remove(id);
     }
 
-    public Set<Micropipe> getDefinitions() {
+    public Set<Definition> getDefinitions() {
         return streameshStore.getAllDefinitions();
     }
 
@@ -77,14 +93,18 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     public TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input) {
-        Micropipe definition = getDefinition(definitionId);
-        TaskDescriptor descriptor = driver.scheduleTask(definition.getImage(),
-                buildCommand(definition, input),
-                definition.getOutputMapping(),
-                desc -> updateIndexes(definition, desc))
+        Definition definition = getDefinition(definitionId);
+        if (!(definition instanceof Micropipe)) {
+            throw new IllegalArgumentException("Cannot schedule tasks for definitions of type " + definition.getType());
+        }
+        Micropipe pipe = (Micropipe) definition;
+        TaskDescriptor descriptor = driver.scheduleTask(pipe.getImage(),
+                buildCommand(pipe, input),
+                pipe.getOutputMapping(),
+                desc -> updateIndexes(pipe, desc))
                 .withServiceName(definition.getName())
                 .withServiceId(definition.getId());
-        updateIndexes(definition, descriptor);
+        updateIndexes(pipe, descriptor);
         return descriptor;
     }
 
@@ -110,7 +130,7 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     private String buildCommand(Micropipe definition, Map<?, ?> input) {
-        InputMapping inputMapping = definition.getInputMapping();
+        TaskInput inputMapping = definition.getInputMapping();
         String params = inputMapping.getParameters().stream()
                 .map(p -> {
                     Object o = input.get(p.getName());

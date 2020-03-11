@@ -7,10 +7,11 @@ import lombok.*;
 @With
 @NoArgsConstructor
 @AllArgsConstructor
-public class OutputMapping {
+public class TaskParameter {
 
     private String name;
-    private String outputDir;
-    private String fileNamePattern;
+    private String internalName;
+    private boolean optional = true;
+    private boolean repeatable;
 
 }

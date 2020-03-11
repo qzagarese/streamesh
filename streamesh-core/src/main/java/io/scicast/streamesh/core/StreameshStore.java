@@ -4,15 +4,15 @@ import java.util.Set;
 
 public interface StreameshStore {
 
-    void storeDefinition(Micropipe definition);
+    void storeDefinition(Definition definition);
 
-    Micropipe getDefinitionById(String id);
+    Definition getDefinitionById(String id);
 
-    Micropipe getDefinitionByName(String name);
+    Definition getDefinitionByName(String name);
 
     void remove(String id);
 
-    Set<Micropipe> getAllDefinitions();
+    Set<Definition> getAllDefinitions();
 
     Set<TaskDescriptor> getAllJobs();
 

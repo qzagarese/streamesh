@@ -1,3 +1,4 @@
+type: micropipe
 name: s3-downloader
 image: "s3-downloader:latest"
 inputMapping:

@@ -7,11 +7,10 @@ import lombok.*;
 @With
 @NoArgsConstructor
 @AllArgsConstructor
-public class CmdParameter {
+public class TaskOutput {
 
     private String name;
-    private String internalName;
-    private boolean optional = true;
-    private boolean repeatable;
+    private String outputDir;
+    private String fileNamePattern;
 
 }
