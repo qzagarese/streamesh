@@ -8,4 +8,4 @@ test_copy.txt
 **/*.project
 **/*.settings
 **/*.factorypath
-
+**/*.log

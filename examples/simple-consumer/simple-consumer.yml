@@ -1,0 +1,14 @@
+name: simple-consumer
+image: "simple-consumer:latest"
+inputMapping:
+  baseCmd: java -jar /usr/bin/simple-consumer-1.0-SNAPSHOT.jar
+  parameters:
+    - name: source
+      internalName: --source
+      optional: false
+      repeatable: true
+outputMapping:
+  - outputDir: /tmp
+    name: output
+    fileNamePattern: output.txt
+  
