@@ -1,7 +1,7 @@
 package io.scicast.streamesh.core.flow;
 
 
-import io.scicast.streamesh.core.reflect.LocallyScoped;
+import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
 import lombok.*;
 
 @Getter

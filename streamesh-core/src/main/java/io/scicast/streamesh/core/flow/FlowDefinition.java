@@ -2,9 +2,9 @@ package io.scicast.streamesh.core.flow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.scicast.streamesh.core.Definition;
-import io.scicast.streamesh.core.reflect.FlowScoped;
-import io.scicast.streamesh.core.reflect.InScope;
-import io.scicast.streamesh.core.reflect.LocallyScoped;
+import io.scicast.streamesh.core.internal.reflect.FlowScoped;
+import io.scicast.streamesh.core.internal.reflect.InScope;
+import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
 import lombok.*;
 
 import java.util.List;

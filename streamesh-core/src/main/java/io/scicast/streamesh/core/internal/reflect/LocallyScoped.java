@@ -1,7 +1,7 @@
-package io.scicast.streamesh.core.reflect;
+package io.scicast.streamesh.core.internal.reflect;
 
-import io.scicast.streamesh.core.reflect.impl.LocallyScopedHandler;
-import io.scicast.streamesh.core.reflect.impl.ScopedInstanceFactory;
+import io.scicast.streamesh.core.internal.reflect.handler.LocallyScopedHandler;
+import io.scicast.streamesh.core.internal.reflect.handler.ScopedInstanceFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

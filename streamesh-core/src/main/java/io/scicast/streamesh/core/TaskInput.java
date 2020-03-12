@@ -1,6 +1,6 @@
 package io.scicast.streamesh.core;
 
-import io.scicast.streamesh.core.reflect.InScope;
+import io.scicast.streamesh.core.internal.reflect.InScope;
 import lombok.*;
 
 import java.util.ArrayList;

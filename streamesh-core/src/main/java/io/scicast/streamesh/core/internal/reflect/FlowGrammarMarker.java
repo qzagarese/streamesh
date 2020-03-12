@@ -1,4 +1,4 @@
-package io.scicast.streamesh.core.reflect;
+package io.scicast.streamesh.core.internal.reflect;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

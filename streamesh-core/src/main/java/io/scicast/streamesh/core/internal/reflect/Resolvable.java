@@ -1,6 +1,6 @@
-package io.scicast.streamesh.core.reflect;
+package io.scicast.streamesh.core.internal.reflect;
 
-import io.scicast.streamesh.core.reflect.impl.ResolvableHandler;
+import io.scicast.streamesh.core.internal.reflect.handler.ResolvableHandler;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

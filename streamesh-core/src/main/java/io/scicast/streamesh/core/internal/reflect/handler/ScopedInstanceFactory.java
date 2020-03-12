@@ -1,4 +1,4 @@
-package io.scicast.streamesh.core.reflect.impl;
+package io.scicast.streamesh.core.internal.reflect.handler;
 
 import io.scicast.streamesh.core.StreameshContext;
 
