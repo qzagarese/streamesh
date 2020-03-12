@@ -1,0 +1,58 @@
+type: flow
+name: airbnb-ny-properties
+
+output:
+  - name: report
+    target: ${plotter.output.plot}
+
+pipes:
+  - type: simple-db-reader
+    as: db-reader
+    output:
+      - target: ${data}
+        as: brooklyn-properties
+
+  - type: s3-downloader
+    as: s3-manhattan
+    input:
+      - target: ${bucket}
+        value: ic-demo-streamesh
+      - target: ${filename}
+        value: data/AB_NYC_2019_Manhattan.csv
+    output:
+      - target: ${output}
+        as: manhattan-properties
+
+  - type: s3-downloader
+    as: s3-others
+    input:
+      - target: ${bucket}
+        value: ic-demo-streamesh
+      - target: ${filename}
+        value: data/AB_NYC_2019_rest.csv
+    output:
+      - target: ${output}
+        as: other-properties
+
+  - type: http-data-merger
+    as: merger
+    input:
+      - target: ${urls}
+        value: ${db-reader.output.brooklyn-properties}
+      - target: ${urls}
+        value: ${s3-manhattan.output.manhattan-properties}
+      - target: ${urls}
+        value: ${s3-other.output.other-properties}
+    output:
+      - target: ${output}
+        as: all-properties
+
+    - type: python-plotter
+      as: plotter
+      input:
+        - target: ${dataset}
+          value: ${merger.output.all-properties}
+      output:
+        - target: ${plot}
+          as: plot
+

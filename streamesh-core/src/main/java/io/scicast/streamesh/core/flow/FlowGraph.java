@@ -10,7 +10,6 @@ import java.util.Set;
 public class FlowGraph {
 
     private Set<FlowNode> nodes = new HashSet<>();
-    private Set<FlowEdge> edges = new HashSet<>();
 
     public void createNode(String name, boolean executable) {
         FlowNode node = FlowNode.builder()
@@ -34,21 +33,24 @@ public class FlowGraph {
                 .sourceOutputName(upStreamOutput)
                 .build();
 
-        if (edges.contains(edge)) {
-            throw new IllegalArgumentException(
-                    String.format("Duplicate edges detected from %s to %s.",
-                            upStream, downStream));
-        }
-
         if (cycleDetected(from, to)) {
             throw new IllegalArgumentException(
                     String.format("Your flow contains cycles including nodes %s ans %s", from.getName(), to.getName()));
         }
+        to.addIncomingLink(edge);
+        from.addOutgoingLink(edge);
 
     }
 
     private boolean cycleDetected(FlowNode from, FlowNode to) {
-        return false;
+        return directlyConnectedTo(to, from)
+                || from.getIncomingLinks().stream()
+                    .anyMatch(edge -> cycleDetected(edge.getSource(), to));
+    }
+
+    private boolean directlyConnectedTo(FlowNode to, FlowNode from) {
+        return from.getIncomingLinks().stream()
+                .anyMatch(edge -> edge.getSource().equals(to));
     }
 
     private FlowNode getNode(String name) {
@@ -65,6 +67,16 @@ public class FlowGraph {
 
         private String name;
         private boolean executable;
+        private Set<FlowEdge> incomingLinks = new HashSet<>();
+        private Set<FlowEdge> outgoingLinks = new HashSet<>();
+
+        public void addIncomingLink(FlowEdge edge) {
+            incomingLinks.add(edge);
+        }
+
+        public void addOutgoingLink(FlowEdge edge) {
+            outgoingLinks.add(edge);
+        }
 
     }
 

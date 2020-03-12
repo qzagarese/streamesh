@@ -1,5 +1,6 @@
-package io.scicast.streamesh.core;
+package io.scicast.streamesh.core.flow;
 
+import io.scicast.streamesh.core.reflect.Resolvable;
 import lombok.*;
 
 @Getter
@@ -8,6 +9,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PipeInput {
+
+    @Resolvable(scope= "")
     private String target;
     private String value;
     private UsabilityState usable = UsabilityState.WHEN_COMPLETED;

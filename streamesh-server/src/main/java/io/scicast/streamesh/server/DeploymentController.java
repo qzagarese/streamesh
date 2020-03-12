@@ -2,7 +2,7 @@ package io.scicast.streamesh.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.scicast.streamesh.core.Definition;
-import io.scicast.streamesh.core.FlowDefinition;
+import io.scicast.streamesh.core.flow.FlowDefinition;
 import io.scicast.streamesh.core.Micropipe;
 import io.scicast.streamesh.core.StreameshOrchestrator;
 import io.scicast.streamesh.core.exception.NotFoundException;
