@@ -29,9 +29,19 @@ public class ScopeFactory {
                 .filter(annotation -> annotation.annotationType().isAnnotationPresent(FlowGrammarMarker.class))
                 .collect(Collectors.toSet());
 
+        // 1. build Scope and put definition in scanList
+        // 2. for each annotated field, process field and check if the type corresponding is annotated
+        // 3. if so, add it to the scanList
+        // 4. exit when the scanList is empty
+
         annotations.forEach(annotation -> {
             GrammarMarkerHandler handler = getHandler(annotation);
-            scope.set(handler.handle(scope.get(), context, definition, annotation));
+            ScopeContext<Annotation> scopeContext = ScopeContext.builder()
+                    .annotation(annotation)
+                    .instance(definition)
+                    .target(definition.getClass())
+                    .build();
+            scope.set(handler.handle(scope.get(), scopeContext, context));
         });
 
         return scope.get();

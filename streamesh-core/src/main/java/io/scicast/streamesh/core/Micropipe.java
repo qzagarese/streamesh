@@ -1,5 +1,6 @@
 package io.scicast.streamesh.core;
 
+import io.scicast.streamesh.core.internal.reflect.InScope;
 import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
 import lombok.*;
 
@@ -11,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
+@InScope
 public class Micropipe implements  Definition {
 
     private String id;

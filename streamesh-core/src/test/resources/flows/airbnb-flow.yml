@@ -47,12 +47,12 @@ pipes:
       - target: ${output}
         as: all-properties
 
-    - type: python-plotter
-      as: plotter
-      input:
-        - target: ${dataset}
-          value: ${merger.output.all-properties}
-      output:
-        - target: ${plot}
-          as: plot
+  - type: python-plotter
+    as: plotter
+    input:
+      - target: ${dataset}
+        value: ${merger.output.all-properties}
+    output:
+      - target: ${plot}
+        as: plot
 

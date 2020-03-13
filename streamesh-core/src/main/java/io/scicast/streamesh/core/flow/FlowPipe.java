@@ -4,13 +4,17 @@ import io.scicast.streamesh.core.internal.reflect.FlowScoped;
 import io.scicast.streamesh.core.internal.reflect.InScope;
 import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
 import io.scicast.streamesh.core.internal.reflect.handler.DefinitionRefProvider;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Builder
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @FlowScoped(using = "as")
 public class FlowPipe {
 

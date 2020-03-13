@@ -2,8 +2,11 @@ package io.scicast.streamesh.core.internal.reflect;
 
 import io.scicast.streamesh.core.StreameshContext;
 
-public interface GrammarMarkerHandler<T> {
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 
-    Scope handle(Scope scope, StreameshContext context, Object instance, T annotation);
+public interface GrammarMarkerHandler<T extends Annotation> {
+
+    Scope handle(Scope scope, ScopeContext<T> scopeContext, StreameshContext streameshContext);
 
 }

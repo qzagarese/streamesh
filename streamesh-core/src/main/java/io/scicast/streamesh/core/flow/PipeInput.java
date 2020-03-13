@@ -1,5 +1,6 @@
 package io.scicast.streamesh.core.flow;
 
+import io.scicast.streamesh.core.internal.reflect.InScope;
 import io.scicast.streamesh.core.internal.reflect.Resolvable;
 import lombok.*;
 
@@ -8,6 +9,7 @@ import lombok.*;
 @With
 @NoArgsConstructor
 @AllArgsConstructor
+@InScope
 public class PipeInput {
 
     @Resolvable(scope = "type.input")

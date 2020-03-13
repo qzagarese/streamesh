@@ -11,6 +11,7 @@ import java.util.List;
 @With
 @NoArgsConstructor
 @AllArgsConstructor
+@InScope
 public class TaskInput {
 
     private String baseCmd;
