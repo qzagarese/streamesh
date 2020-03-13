@@ -1,0 +1,15 @@
+type: micropipe
+name: s3-downloader
+image: "s3-downloader:latest"
+inputMapping:
+  baseCmd: java -jar /usr/bin/s3-downloader-1.0-SNAPSHOT.jar
+  parameters:
+    - name: bucket
+      internalName: --bucket
+      optional: true
+    - name: filename
+      internalName: --file
+outputMapping:
+  - outputDir: /tmp
+    fileNamePattern: data.csv
+    name: output

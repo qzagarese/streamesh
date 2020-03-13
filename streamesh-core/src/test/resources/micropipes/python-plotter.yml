@@ -1,0 +1,15 @@
+type: micropipe
+name: python-plotter
+image: "python-plotter:latest"
+inputMapping:
+  baseCmd: python3 /usr/plot_1.py
+  parameters:
+    - name: dataset
+      internalName: --url
+      optional: false
+outputMapping:
+  - name: plot
+    outputDir: /tmp
+    fileNamePattern: count_of_room_type_by_neighbourhood.png
+
+

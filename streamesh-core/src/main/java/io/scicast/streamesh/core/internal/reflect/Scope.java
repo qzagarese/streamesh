@@ -4,7 +4,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.With;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Builder
@@ -12,8 +11,8 @@ import java.util.Map;
 @With
 public class Scope {
 
-    private Map<String, Object> structure = new HashMap<>();
-    private Map<String, String> dependencies = new HashMap<>();
+    private Map<String, Object> structure;
+    private Map<String, String> dependencies;
 
 
 }

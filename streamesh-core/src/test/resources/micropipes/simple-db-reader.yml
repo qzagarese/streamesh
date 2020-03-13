@@ -1,0 +1,9 @@
+type: micropipe
+name: simple-db-reader
+image: "simple-db-reader:latest"
+inputMapping:
+  baseCmd: java -jar /usr/bin/simple-db-reader-1.0-SNAPSHOT.jar
+outputMapping:
+  - name: data
+    outputDir: /tmp
+    fileNamePattern: data.csv

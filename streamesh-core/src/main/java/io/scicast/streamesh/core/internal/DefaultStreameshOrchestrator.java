@@ -7,6 +7,8 @@ import io.scicast.streamesh.core.exception.MissingParameterException;
 import io.scicast.streamesh.core.exception.NotFoundException;
 import io.scicast.streamesh.core.flow.FlowDefinition;
 import io.scicast.streamesh.core.flow.FlowGraphBuilder;
+import io.scicast.streamesh.core.internal.reflect.Scope;
+import io.scicast.streamesh.core.internal.reflect.ScopeFactory;
 
 import java.io.InputStream;
 import java.util.*;
@@ -18,13 +20,15 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
 
     private final StreameshStore streameshStore = new InMemoryStreameshStore();
     private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
+    private final StreameshContext context;
+    private final ScopeFactory scopeFactory;
 
     private OrchestrationDriver driver;
 
     public DefaultStreameshOrchestrator(String serverIpAddress) {
         ServiceLoader<OrchestrationDriver> loader = ServiceLoader.load(OrchestrationDriver.class);
 
-        this.driver = StreamSupport.stream(loader.spliterator(), false)
+       driver = StreamSupport.stream(loader.spliterator(), false)
                 .peek(impl -> logger.info(
                         "Found orchestration driver of type " + impl.getClass().getSimpleName()))
                 .findFirst()
@@ -33,7 +37,17 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
                     return impl;
                 })
                 .orElseThrow(() -> new RuntimeException("No orchestration driver. Booting sequence aborted."));
-        this.driver.setStreameshServerAddress(serverIpAddress);
+        driver.setStreameshServerAddress(serverIpAddress);
+
+        context = StreameshContext.builder()
+                .orchestrationDriver(driver)
+                .store(streameshStore)
+                .orchestrator(this)
+                .build();
+
+        scopeFactory = ScopeFactory.builder()
+                .context(context)
+                .build();
     }
 
     public String applyDefinition(Definition definition) {
@@ -48,6 +62,9 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
 
     private String applyFlowDefinition(FlowDefinition definition) {
         String definitionId = UUID.randomUUID().toString();
+        Scope scope = scopeFactory.create(definition);
+
+
         definition = definition.withGraph(new FlowGraphBuilder(streameshStore).build(definition));
         streameshStore.storeDefinition(definition.withId(definitionId));
         return definitionId;
