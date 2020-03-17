@@ -11,7 +11,7 @@ import java.lang.reflect.AnnotatedElement;
 public class FlowScopedHandler implements GrammarMarkerHandler<FlowScoped> {
 
     @Override
-    public Scope handle(Scope scope, ScopeContext<FlowScoped> scopeContext, StreameshContext streameshContext) {
-        return scope;
+    public ScopeContext handle(ScopeContext scopeContext, StreameshContext streameshContext) {
+        return scopeContext;
     }
 }

@@ -7,6 +7,6 @@ import java.lang.reflect.AnnotatedElement;
 
 public interface GrammarMarkerHandler<T extends Annotation> {
 
-    Scope handle(Scope scope, ScopeContext<T> scopeContext, StreameshContext streameshContext);
+    ScopeContext handle(ScopeContext scopeContext, StreameshContext streameshContext);
 
 }

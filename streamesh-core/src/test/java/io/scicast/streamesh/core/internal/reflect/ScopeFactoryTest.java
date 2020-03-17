@@ -56,7 +56,7 @@ public class ScopeFactoryTest {
     public void testScopeCreation() throws IOException {
         FlowDefinition definition = loadDefinition("/flows/airbnb-flow.yml", FlowDefinition.class);
         ScopeFactory factory = ScopeFactory.builder()
-                .context(context)
+                .streameshContext(context)
                 .build();
         Scope scope = factory.create(definition);
 

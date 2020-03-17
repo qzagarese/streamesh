@@ -46,7 +46,7 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
                 .build();
 
         scopeFactory = ScopeFactory.builder()
-                .context(context)
+                .streameshContext(context)
                 .build();
     }
 

@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.With;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
@@ -12,17 +13,12 @@ import java.util.Queue;
 @With
 public class Scope {
 
-    private Map<String, Object> structure;
+    private List<String> path;
+    private Object value;
+
+    private Map<String, Scope> structure;
     private Map<String, String> dependencies;
 
-    private Queue scanList;
 
-    public void addTarget(Object target) {
-        scanList.add(target);
-    }
-
-    public Object nextTarget() {
-        return scanList.poll();
-    }
 
 }
