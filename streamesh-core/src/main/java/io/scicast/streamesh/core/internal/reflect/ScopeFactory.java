@@ -7,10 +7,8 @@ import lombok.Builder;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Field;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,19 +32,13 @@ public class ScopeFactory {
                 .target(definition.getClass())
                 .parentPath(new ArrayList<>())
                 .scope(scope)
+                .scanQueue(new ArrayDeque())
                 .build();
-        context.addTarget(definition);
         return scan(context);
-
-        // 1. build Scope and put definition in scanList
-        // 2. for each annotated field, process field and check if the type corresponding is annotated
-        // 3. if so, add it to the scanList
-        // 4. exit when the scanList is empty
-
     }
 
     private Scope scan(ScopeContext context) {
-        Object annotatedInstance = context.nextTarget();
+        Object annotatedInstance = context.getTypeLevelInstance();
         if (annotatedInstance == null) {
             return context.getScope();
         }
@@ -63,9 +55,41 @@ public class ScopeFactory {
             cumulativeContext.set(cumulativeContext.get()
                     .withScope(newContext.getScope())
                     .withScanQueue(newContext.getScanQueue()));
-
         });
 
+        Queue<Object> processableChildren = new ArrayDeque<>();
+
+        Stream.of(annotatedInstance.getClass().getDeclaredFields()).forEach(field -> {
+            Object fieldValue = getFieldValue(annotatedInstance, field);
+            List<Annotation> markers = getMarkerAnnotations(field);
+            if (!markers.isEmpty() && fieldValue != null) {
+                markers.forEach(annotation -> {
+
+                    ScopeContext fieldLevelContext = context.withAnnotation(annotation)
+                            .withTypeLevelInstance(annotatedInstance)
+                            .withInstance(fieldValue);
+                    // TODO prepare path in context
+
+                    ScopeContext newContext = getHandler(annotation).handle(fieldLevelContext, streameshContext);
+                    cumulativeContext.set(cumulativeContext.get()
+                            .withScope(newContext.getScope())
+                            .withScanQueue(newContext.getScanQueue()));
+                });
+                if(!getMarkerAnnotations(fieldValue.getClass()).isEmpty()) {
+                    processableChildren.add(fieldValue);
+                }
+            }
+        });
+
+        processableChildren.forEach(child -> {
+            // TODO make recursive call to children (need to prepare context)
+            // TODO aggregate scope from children results to current context scope
+        });
+
+        return cumulativeContext.get().getScope();
+    }
+
+    private Object getFieldValue(Object annotatedInstance, Field field) {
         return null;
     }
 

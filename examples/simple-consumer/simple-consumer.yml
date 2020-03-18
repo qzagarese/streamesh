@@ -6,7 +6,7 @@ inputMapping:
     - name: source
       internalName: --source
       optional: false
-      repeatable: true
+      repeatable: false
 outputMapping:
   - outputDir: /tmp
     name: output
