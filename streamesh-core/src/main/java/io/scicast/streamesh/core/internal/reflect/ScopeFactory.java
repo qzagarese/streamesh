@@ -23,7 +23,6 @@ public class ScopeFactory {
 
     public Scope create(FlowDefinition definition) {
         Scope scope = Scope.builder()
-                .path(new ArrayList<>())
                 .value(definition)
                 .build();
         ScopeContext context = ScopeContext.builder()
@@ -57,48 +56,70 @@ public class ScopeFactory {
                     .withScanList(newContext.getScanList()));
         });
 
-        List<Object> processableChildren = new ArrayList<>();
 
         Stream.of(annotatedInstance.getClass().getDeclaredFields()).forEach(field -> {
             Object fieldValue = getFieldValue(annotatedInstance, field);
             List<Annotation> markers = getMarkerAnnotations(field);
+
+            AtomicReference<ScopeContext> fieldAggregatedContext = new AtomicReference<>(cumulativeContext.get());
             if (!markers.isEmpty() && fieldValue != null) {
                 markers.forEach(annotation -> {
 
-                    ScopeContext fieldLevelContext = context.withAnnotation(annotation)
+                    ScopeContext fieldLevelContext = fieldAggregatedContext.get().withAnnotation(annotation)
+                            .withTarget(field)
                             .withTypeLevelInstance(annotatedInstance)
                             .withInstance(fieldValue)
-                            .withParentPath(cumulativeContext.get().getParentPath());
-                    // TODO prepare path in context
+                            .withParentPath(fieldAggregatedContext.get().getParentPath());
 
                     ScopeContext newContext = getHandler(annotation).handle(fieldLevelContext, streameshContext);
-                    cumulativeContext.set(cumulativeContext.get()
-                            .withScope(newContext.getScope())
-                            .withScanList(newContext.getScanList()));
+                    fieldAggregatedContext.set(
+                            fieldAggregatedContext.get()
+                                    .withScope(newContext.getScope())
+                                    .withScanList(newContext.getScanList()));
                 });
                 if(!getMarkerAnnotations(fieldValue.getClass()).isEmpty()) {
-                    processableChildren.add(fieldValue);
+                    List<String> path = fieldAggregatedContext.get().getParentPath();
+                    cumulativeContext.get().getScanList().add(ScannableItem.builder()
+                            .value(fieldValue)
+                            .mountedAs(path.size() > 0 ? path.get(path.size() - 1) : null)
+                            .build());
                 }
             }
         });
 
-        processableChildren.forEach(child -> {
-            // TODO make recursive call to children (need to prepare context)
+        cumulativeContext.get().getScanList().forEach(child -> {
+            List<String> newPath = context.getParentPath();
+            newPath.add(child.getMountedAs());
+
             ScopeContext childContext = cumulativeContext.get()
                     .withScanList(new ArrayList())
-                    .withTypeLevelInstance(child)
-                    .withInstance(child);
+                    .withTypeLevelInstance(child.getValue())
+                    .withInstance(child.getValue())
+                    .withTarget(child.getValue().getClass())
+                    .withParentPath(newPath);
+
             Scope childScope = scan(childContext);
             cumulativeContext.set(cumulativeContext.get()
                     .withScope(cumulativeContext.get().getScope().attach(childScope, childContext.getParentPath())));
-            // TODO aggregate scope from children results to current context scope
         });
 
         return cumulativeContext.get().getScope();
     }
 
     private Object getFieldValue(Object annotatedInstance, Field field) {
-        return null;
+        boolean accessible = field.canAccess(annotatedInstance);
+        field.setAccessible(true);
+        Object fieldValue;
+        try {
+            fieldValue = field.get(annotatedInstance);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(
+                    String.format("Cannot access value of  field %s.%s.",
+                            field.getDeclaringClass().getName(),
+                            field.getName()), e);
+        }
+        field.setAccessible(accessible);
+        return fieldValue;
     }
 
     private List<Annotation> getMarkerAnnotations(AnnotatedElement element) {

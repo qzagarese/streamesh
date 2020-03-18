@@ -19,9 +19,9 @@ public class ScopeContext {
     private AnnotatedElement target;
     private List<String> parentPath;
     private Scope scope;
-    private List scanList;
+    private List<ScannableItem> scanList;
 
-    public void addTarget(Object target) {
+    public void addTarget(ScannableItem target) {
         scanList.add(target);
     }
 

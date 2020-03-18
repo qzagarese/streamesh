@@ -30,6 +30,7 @@ public class ScopeFactoryTest {
     private static ObjectMapper mapper = new YAMLMapper();
     private StreameshContext context;
 
+    private ObjectMapper jsonMapper = new ObjectMapper();
 
     @BeforeClass
     public static void setUpClass() throws IOException {
@@ -59,6 +60,7 @@ public class ScopeFactoryTest {
                 .streameshContext(context)
                 .build();
         Scope scope = factory.create(definition);
+        jsonMapper.writerFor(Scope.class).writeValue(System.out, scope);
 
     }
 
