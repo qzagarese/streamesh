@@ -7,28 +7,22 @@ import lombok.With;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.util.List;
-import java.util.Queue;
 
 @Getter
 @Builder
 @With
 public class ScopeContext {
 
-    Annotation annotation;
-    Object typeLevelInstance;
-    Object instance;
-    AnnotatedElement target;
-    List<String> parentPath;
-    Scope scope;
-
-    private Queue scanQueue;
+    private Annotation annotation;
+    private Object typeLevelInstance;
+    private Object instance;
+    private AnnotatedElement target;
+    private List<String> parentPath;
+    private Scope scope;
+    private List scanList;
 
     public void addTarget(Object target) {
-        scanQueue.add(target);
-    }
-
-    public Object nextTarget() {
-        return scanQueue.poll();
+        scanList.add(target);
     }
 
 }

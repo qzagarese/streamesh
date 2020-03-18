@@ -32,7 +32,7 @@ public class ScopeFactory {
                 .target(definition.getClass())
                 .parentPath(new ArrayList<>())
                 .scope(scope)
-                .scanQueue(new ArrayDeque())
+                .scanList(new ArrayList())
                 .build();
         return scan(context);
     }
@@ -51,13 +51,13 @@ public class ScopeFactory {
         AtomicReference<ScopeContext> cumulativeContext = new AtomicReference<>(context);
 
         annotations.forEach(annotation -> {
-            ScopeContext newContext = getHandler(annotation).handle(context.withAnnotation(annotation), streameshContext);
+            ScopeContext newContext = getHandler(annotation).handle(cumulativeContext.get().withAnnotation(annotation), streameshContext);
             cumulativeContext.set(cumulativeContext.get()
                     .withScope(newContext.getScope())
-                    .withScanQueue(newContext.getScanQueue()));
+                    .withScanList(newContext.getScanList()));
         });
 
-        Queue<Object> processableChildren = new ArrayDeque<>();
+        List<Object> processableChildren = new ArrayList<>();
 
         Stream.of(annotatedInstance.getClass().getDeclaredFields()).forEach(field -> {
             Object fieldValue = getFieldValue(annotatedInstance, field);
@@ -67,13 +67,14 @@ public class ScopeFactory {
 
                     ScopeContext fieldLevelContext = context.withAnnotation(annotation)
                             .withTypeLevelInstance(annotatedInstance)
-                            .withInstance(fieldValue);
+                            .withInstance(fieldValue)
+                            .withParentPath(cumulativeContext.get().getParentPath());
                     // TODO prepare path in context
 
                     ScopeContext newContext = getHandler(annotation).handle(fieldLevelContext, streameshContext);
                     cumulativeContext.set(cumulativeContext.get()
                             .withScope(newContext.getScope())
-                            .withScanQueue(newContext.getScanQueue()));
+                            .withScanList(newContext.getScanList()));
                 });
                 if(!getMarkerAnnotations(fieldValue.getClass()).isEmpty()) {
                     processableChildren.add(fieldValue);
@@ -83,6 +84,13 @@ public class ScopeFactory {
 
         processableChildren.forEach(child -> {
             // TODO make recursive call to children (need to prepare context)
+            ScopeContext childContext = cumulativeContext.get()
+                    .withScanList(new ArrayList())
+                    .withTypeLevelInstance(child)
+                    .withInstance(child);
+            Scope childScope = scan(childContext);
+            cumulativeContext.set(cumulativeContext.get()
+                    .withScope(cumulativeContext.get().getScope().attach(childScope, childContext.getParentPath())));
             // TODO aggregate scope from children results to current context scope
         });
 
