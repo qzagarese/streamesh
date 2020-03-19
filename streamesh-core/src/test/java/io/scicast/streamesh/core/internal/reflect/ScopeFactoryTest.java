@@ -1,6 +1,7 @@
 package io.scicast.streamesh.core.internal.reflect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.scicast.streamesh.core.Micropipe;
 import io.scicast.streamesh.core.StreameshContext;
@@ -60,7 +61,7 @@ public class ScopeFactoryTest {
                 .streameshContext(context)
                 .build();
         Scope scope = factory.create(definition);
-        jsonMapper.writerFor(Scope.class).writeValue(System.out, scope);
+        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT).writerFor(Scope.class).writeValue(System.out, scope);
 
     }
 

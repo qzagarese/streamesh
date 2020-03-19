@@ -77,7 +77,8 @@ public class ScopeFactory {
                                     .withScope(newContext.getScope())
                                     .withScanList(newContext.getScanList()));
                 });
-                if(!getMarkerAnnotations(fieldValue.getClass()).isEmpty()) {
+
+                if(shouldScanFieldType(fieldValue)) {
                     List<String> path = fieldAggregatedContext.get().getParentPath();
                     cumulativeContext.get().getScanList().add(ScannableItem.builder()
                             .value(fieldValue)
@@ -91,6 +92,7 @@ public class ScopeFactory {
             List<String> newPath = context.getParentPath();
             newPath.add(child.getMountedAs());
 
+            // TODO handle collection field case here and in scope.attach
             ScopeContext childContext = cumulativeContext.get()
                     .withScanList(new ArrayList())
                     .withTypeLevelInstance(child.getValue())
@@ -104,6 +106,23 @@ public class ScopeFactory {
         });
 
         return cumulativeContext.get().getScope();
+    }
+
+    private boolean shouldScanFieldType(Object fieldValue) {
+        if (fieldValue == null) {
+            return false;
+        }
+        Class<?> target;
+        if (fieldValue instanceof Collection) {
+            Collection<?> c = (Collection) fieldValue;
+            if (c.isEmpty()) {
+                return false;
+            }
+            target = c.stream().findFirst().get().getClass();
+        } else {
+            target = fieldValue.getClass();
+        }
+        return !getMarkerAnnotations(target).isEmpty();
     }
 
     private Object getFieldValue(Object annotatedInstance, Field field) {

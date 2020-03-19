@@ -1,5 +1,6 @@
 package io.scicast.streamesh.core.internal.reflect;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import java.util.HashMap;
@@ -13,9 +14,13 @@ import java.util.stream.Collectors;
 @With
 public class Scope {
 
+    @JsonIgnore
     private Object value;
 
+    @Builder.Default
     private Map<String, Scope> structure = new HashMap<>();
+
+    @Builder.Default
     private Map<String, String> dependencies = new HashMap<>();
 
 
