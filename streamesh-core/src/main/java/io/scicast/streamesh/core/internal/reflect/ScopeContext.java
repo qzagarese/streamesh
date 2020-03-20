@@ -6,6 +6,7 @@ import lombok.With;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -19,7 +20,9 @@ public class ScopeContext {
     private AnnotatedElement target;
     private List<String> parentPath;
     private Scope scope;
-    private List<ScannableItem> scanList;
+
+    @Builder.Default
+    private List<ScannableItem> scanList = new ArrayList<>();
 
     public void addTarget(ScannableItem target) {
         scanList.add(target);

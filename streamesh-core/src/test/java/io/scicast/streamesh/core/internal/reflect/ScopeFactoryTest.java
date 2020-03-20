@@ -1,5 +1,7 @@
 package io.scicast.streamesh.core.internal.reflect;
 
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -28,7 +30,7 @@ public class ScopeFactoryTest {
     private static Micropipe plotter;
     private static Micropipe s3Downloader;
     private static Micropipe dbReader;
-    private static ObjectMapper mapper = new YAMLMapper();
+    private static ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private StreameshContext context;
 
     private ObjectMapper jsonMapper = new ObjectMapper();

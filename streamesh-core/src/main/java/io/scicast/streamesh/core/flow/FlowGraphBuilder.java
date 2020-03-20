@@ -14,9 +14,9 @@ public class FlowGraphBuilder {
 
     public FlowGraph build(FlowDefinition definition) {
         FlowGraph graph = new FlowGraph();
-        definition.getOutput().forEach(output -> {
-            graph.createNode(output.getName(), false);
-        });
+//        definition.getOutput().forEach(output -> {
+//            graph.createNode(output.getName(), false);
+//        });
         definition.getPipes().forEach(pipe -> {
             Optional.of(store.getDefinitionByName(pipe.getType()))
                     .orElseThrow(() -> new IllegalArgumentException("Cannot find any component of type " + pipe.getType()));

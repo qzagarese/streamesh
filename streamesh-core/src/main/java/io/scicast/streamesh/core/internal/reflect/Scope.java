@@ -3,10 +3,8 @@ package io.scicast.streamesh.core.internal.reflect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Builder
@@ -26,7 +24,15 @@ public class Scope {
 
     public Scope attach(Scope childScope, List<String> path) {
         if (path == null || path.isEmpty()) {
-            return childScope;
+            if (childScope == null) {
+                return this;
+            } else {
+                AtomicReference<Scope> newScope = new AtomicReference<>(this);
+                childScope.getStructure().forEach((key, value) -> {
+                    newScope.set(newScope.get().attach(value, Arrays.asList(key)));
+                });
+                return newScope.get();
+            }
         }
         Scope parent = this;
         for(int i = 0; i < path.size(); i++) {

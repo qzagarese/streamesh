@@ -5,9 +5,6 @@ import io.scicast.streamesh.core.flow.FlowDefinition;
 import lombok.Builder;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -42,70 +39,108 @@ public class ScopeFactory {
             return context.getScope();
         }
 
-        List<Annotation> annotations = getMarkerAnnotations(annotatedInstance.getClass());
+        List<Annotation> annotations = ReflectionUtils.getMarkerAnnotations(annotatedInstance.getClass());
         if (annotations.isEmpty()) {
             return context.getScope();
         }
 
+        //Handle type level annotations
+        context = processTypeLevelAnnotations(annotations, context);
+
+
+        //Handle field level annotations
+        context = processFieldLevelAnnotations(annotatedInstance, context);
+
+
         AtomicReference<ScopeContext> cumulativeContext = new AtomicReference<>(context);
 
-        annotations.forEach(annotation -> {
-            ScopeContext newContext = getHandler(annotation).handle(cumulativeContext.get().withAnnotation(annotation), streameshContext);
+        context.getScanList().forEach(child -> {
+            List<String> childMountPoint = child.getMountPoint();
+
+            ScopeContext childContext;
+            Scope childScope;
+            if (child.getMultiplicity().equals(ScannableItem.Multiplicity.SINGLE)) {
+
+                childContext = cumulativeContext.get()
+                        .withTypeLevelInstance(child.getValue())
+                        .withInstance(child.getValue())
+                        .withTarget(child.getValue().getClass())
+                        .withParentPath(childMountPoint)
+                        .withScanList(new ArrayList<>());
+
+                childScope = scan(childContext);
+            } else {
+                Collection<?> children = (Collection) child.getValue();
+                AtomicReference<ScopeContext> childCumulativeContext = new AtomicReference<>(cumulativeContext.get());
+                children.stream().forEach(c -> {
+                    ScopeContext sc = childCumulativeContext.get()
+                            .withTypeLevelInstance(c)
+                            .withInstance(c)
+                            .withTarget(c.getClass())
+                            .withParentPath(childMountPoint)
+                            .withScanList(new ArrayList<>());
+                    childCumulativeContext.set(childCumulativeContext.get()
+                        .withScope(scan(sc)));
+                });
+                childScope = childCumulativeContext.get().getScope();
+            }
             cumulativeContext.set(cumulativeContext.get()
-                    .withScope(newContext.getScope())
-                    .withScanList(newContext.getScanList()));
+                    .withScope(childScope));
         });
+        return cumulativeContext.get().getScope();
+    }
 
-
+    private ScopeContext processFieldLevelAnnotations(Object annotatedInstance, ScopeContext mainContext) {
+        AtomicReference<ScopeContext> cumulativeContext = new AtomicReference<>(mainContext);
         Stream.of(annotatedInstance.getClass().getDeclaredFields()).forEach(field -> {
-            Object fieldValue = getFieldValue(annotatedInstance, field);
-            List<Annotation> markers = getMarkerAnnotations(field);
+            Object fieldValue = ReflectionUtils.getFieldValue(annotatedInstance, field);
+            List<Annotation> markers = ReflectionUtils.getMarkerAnnotations(field);
 
             AtomicReference<ScopeContext> fieldAggregatedContext = new AtomicReference<>(cumulativeContext.get());
             if (!markers.isEmpty() && fieldValue != null) {
                 markers.forEach(annotation -> {
 
-                    ScopeContext fieldLevelContext = fieldAggregatedContext.get().withAnnotation(annotation)
-                            .withTarget(field)
-                            .withTypeLevelInstance(annotatedInstance)
-                            .withInstance(fieldValue)
-                            .withParentPath(fieldAggregatedContext.get().getParentPath());
+                    ScopeContext fieldLevelContext = ScopeContext.builder()
+                            .annotation(annotation)
+                            .target(field)
+                            .typeLevelInstance(annotatedInstance)
+                            .instance(fieldValue)
+                            .parentPath(fieldAggregatedContext.get().getParentPath())
+                            .scope(fieldAggregatedContext.get().getScope())
+                            .build();
 
-                    ScopeContext newContext = getHandler(annotation).handle(fieldLevelContext, streameshContext);
-                    fieldAggregatedContext.set(
-                            fieldAggregatedContext.get()
-                                    .withScope(newContext.getScope())
-                                    .withScanList(newContext.getScanList()));
+                    HandlerResult result = getHandler(annotation).handle(fieldLevelContext, streameshContext);
+                    // for each field, decide whether the corresponding type should be processed
+                    if(shouldScanFieldType(result.getTargetValue())) {
+                        List<String> mountPoint = result.getTargetMountPoint();
+                        fieldAggregatedContext.get().getScanList().add(ScannableItem.builder()
+                                .value(result.getTargetValue())
+                                .multiplicity((result.getTargetValue() instanceof Collection)
+                                        ? ScannableItem.Multiplicity.MULTIPLE
+                                        : ScannableItem.Multiplicity.SINGLE)
+                                .mountPoint(mountPoint)
+                                .build());
+                    }
+                    fieldAggregatedContext.set(fieldAggregatedContext.get().withScope(result.getResultScope()));
                 });
 
-                if(shouldScanFieldType(fieldValue)) {
-                    List<String> path = fieldAggregatedContext.get().getParentPath();
-                    cumulativeContext.get().getScanList().add(ScannableItem.builder()
-                            .value(fieldValue)
-                            .mountedAs(path.size() > 0 ? path.get(path.size() - 1) : null)
-                            .build());
-                }
             }
-        });
-
-        cumulativeContext.get().getScanList().forEach(child -> {
-            List<String> newPath = context.getParentPath();
-            newPath.add(child.getMountedAs());
-
-            // TODO handle collection field case here and in scope.attach
-            ScopeContext childContext = cumulativeContext.get()
-                    .withScanList(new ArrayList())
-                    .withTypeLevelInstance(child.getValue())
-                    .withInstance(child.getValue())
-                    .withTarget(child.getValue().getClass())
-                    .withParentPath(newPath);
-
-            Scope childScope = scan(childContext);
             cumulativeContext.set(cumulativeContext.get()
-                    .withScope(cumulativeContext.get().getScope().attach(childScope, childContext.getParentPath())));
+                    .withScope(fieldAggregatedContext.get().getScope())
+                    .withScanList(fieldAggregatedContext.get().getScanList()));
         });
+        return cumulativeContext.get();
+    }
 
-        return cumulativeContext.get().getScope();
+    private ScopeContext processTypeLevelAnnotations(List<Annotation> annotations, ScopeContext mainContext) {
+        AtomicReference<ScopeContext> cumulativeContext = new AtomicReference<>(mainContext);
+        annotations.forEach(annotation -> {
+            HandlerResult result = getHandler(annotation).handle(cumulativeContext.get().withAnnotation(annotation), streameshContext);
+            cumulativeContext.set(cumulativeContext.get()
+                    .withScope(result.getResultScope())
+                    .withParentPath(result.getTargetMountPoint()));
+        });
+        return cumulativeContext.get();
     }
 
     private boolean shouldScanFieldType(Object fieldValue) {
@@ -122,56 +157,18 @@ public class ScopeFactory {
         } else {
             target = fieldValue.getClass();
         }
-        return !getMarkerAnnotations(target).isEmpty();
-    }
-
-    private Object getFieldValue(Object annotatedInstance, Field field) {
-        boolean accessible = field.canAccess(annotatedInstance);
-        field.setAccessible(true);
-        Object fieldValue;
-        try {
-            fieldValue = field.get(annotatedInstance);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(
-                    String.format("Cannot access value of  field %s.%s.",
-                            field.getDeclaringClass().getName(),
-                            field.getName()), e);
-        }
-        field.setAccessible(accessible);
-        return fieldValue;
-    }
-
-    private List<Annotation> getMarkerAnnotations(AnnotatedElement element) {
-        return Stream.of(element.getDeclaredAnnotations())
-                    .filter(annotation -> annotation.annotationType().isAnnotationPresent(FlowGrammarMarker.class))
-                    .collect(Collectors.toList());
+        return !ReflectionUtils.getMarkerAnnotations(target).isEmpty();
     }
 
     private GrammarMarkerHandler getHandler(Annotation annotation) {
         GrammarMarkerHandler grammarMarkerHandler = handlers.get(annotation);
         if (grammarMarkerHandler == null) {
-            grammarMarkerHandler = instantiateHandler(annotation);
+            grammarMarkerHandler = ReflectionUtils.instantiateHandler(annotation);
             handlers.put(annotation, grammarMarkerHandler);
         }
         return grammarMarkerHandler;
     }
 
-    private GrammarMarkerHandler instantiateHandler(Annotation annotation) {
-        GrammarMarkerHandler grammarMarkerHandler;
-        FlowGrammarMarker marker = annotation.annotationType().getAnnotation(FlowGrammarMarker.class);
-        Constructor c = Stream.of(marker.handler().getConstructors())
-                .findFirst()
-                .orElseThrow(() -> {
-                    return new IllegalStateException(
-                            String.format("Cannot instantiate %s. Handlers must declare only one zero-arguments constructor.",
-                                    marker.handler().getName()));
-                });
-        try {
-            grammarMarkerHandler = (GrammarMarkerHandler) c.newInstance(new Object[0]);
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot instantiate " + marker.handler().getName(), e);
-        }
-        return grammarMarkerHandler;
-    }
+
 
 }
