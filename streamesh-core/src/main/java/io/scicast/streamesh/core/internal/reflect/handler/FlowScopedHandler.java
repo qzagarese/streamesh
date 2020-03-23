@@ -56,7 +56,7 @@ public class FlowScopedHandler implements GrammarMarkerHandler<FlowScoped> {
     private HandlerResult buildResult(ScopeContext scopeContext, Scope localScope, List<String> path) {
         return HandlerResult.builder()
                 .targetValue(scopeContext.getInstance())
-                .resultScope(scopeContext.getScope().attach(localScope, path))
+                .resultScope(scopeContext.getScope().attach(localScope, path, false))
                 .targetMountPoint(path)
                 .build();
     }

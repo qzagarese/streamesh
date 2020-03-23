@@ -1,5 +1,6 @@
 package io.scicast.streamesh.core.internal.reflect;
 
+import io.scicast.streamesh.core.internal.reflect.handler.FieldValueInstanceFactory;
 import io.scicast.streamesh.core.internal.reflect.handler.LocallyScopedHandler;
 import io.scicast.streamesh.core.internal.reflect.handler.ScopedInstanceFactory;
 
@@ -15,6 +16,6 @@ public @interface LocallyScoped {
 
     String as() default "";
     String using() default "";
-    Class<? extends ScopedInstanceFactory> factory() default ScopedInstanceFactory.class;
+    Class<? extends ScopedInstanceFactory> factory() default FieldValueInstanceFactory.class;
 
 }

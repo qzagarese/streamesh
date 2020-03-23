@@ -8,6 +8,6 @@ public class DefinitionRefProvider implements ScopedInstanceFactory<Definition> 
 
     @Override
     public Definition create(StreameshContext context, LocallyScoped annotation, String instance) {
-        return null;
+        return context.getStore().getDefinitionByName(instance);
     }
 }

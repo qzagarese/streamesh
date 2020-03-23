@@ -1,5 +1,7 @@
 package io.scicast.streamesh.core.internal.reflect;
 
+import io.scicast.streamesh.core.internal.reflect.handler.ScopedInstanceFactory;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
@@ -29,19 +31,29 @@ public class ReflectionUtils {
     public static GrammarMarkerHandler instantiateHandler(Annotation annotation) {
         GrammarMarkerHandler grammarMarkerHandler;
         FlowGrammarMarker marker = annotation.annotationType().getAnnotation(FlowGrammarMarker.class);
-        Constructor c = Stream.of(marker.handler().getConstructors())
+        grammarMarkerHandler = (GrammarMarkerHandler) doInstantiation(marker.handler(), "Handlers");
+        return grammarMarkerHandler;
+    }
+
+    public static ScopedInstanceFactory instantiateFactory(Class<? extends ScopedInstanceFactory> concreteType) {
+        return (ScopedInstanceFactory) doInstantiation(concreteType, "Factories");
+    }
+
+    private static Object doInstantiation(Class<?> type, String instanceType) {
+        Object instance;
+        Constructor c = Stream.of(type.getConstructors())
                 .findFirst()
                 .orElseThrow(() -> {
                     return new IllegalStateException(
-                            String.format("Cannot instantiate %s. Handlers must declare only one zero-arguments constructor.",
-                                    marker.handler().getName()));
+                            String.format("Cannot instantiate %s. %s must declare only one zero-arguments constructor.",
+                                    type.getName(), instanceType));
                 });
         try {
-            grammarMarkerHandler = (GrammarMarkerHandler) c.newInstance(new Object[0]);
+            instance = c.newInstance(new Object[0]);
         } catch (Exception e) {
-            throw new RuntimeException("Cannot instantiate " + marker.handler().getName(), e);
+            throw new RuntimeException("Cannot instantiate " + type.getName(), e);
         }
-        return grammarMarkerHandler;
+        return instance;
     }
 
     public static List<Annotation> getMarkerAnnotations(AnnotatedElement element) {

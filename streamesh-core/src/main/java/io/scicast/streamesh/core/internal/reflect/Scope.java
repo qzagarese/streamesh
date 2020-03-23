@@ -19,17 +19,16 @@ public class Scope {
     private Map<String, Scope> structure = new HashMap<>();
 
     @Builder.Default
-    private Map<String, String> dependencies = new HashMap<>();
+    private List<List<String>> dependencies = new ArrayList<>();
 
-
-    public Scope attach(Scope childScope, List<String> path) {
+    public Scope attach(Scope childScope, List<String> path, boolean overwrite) {
         if (path == null || path.isEmpty()) {
             if (childScope == null) {
                 return this;
             } else {
                 AtomicReference<Scope> newScope = new AtomicReference<>(this);
                 childScope.getStructure().forEach((key, value) -> {
-                    newScope.set(newScope.get().attach(value, Arrays.asList(key)));
+                    newScope.set(newScope.get().attach(value, Arrays.asList(key), overwrite));
                 });
                 return newScope.get();
             }
@@ -43,7 +42,7 @@ public class Scope {
             }
             if (i == (path.size() - 1)) {
                 Scope currentValue = parent.getStructure().get(path.get(i));
-                if (currentValue != null && (!currentValue.isEmpty())) {
+                if (currentValue != null && (!currentValue.isEmpty()) && !overwrite) {
                     throw new IllegalArgumentException(
                             String.format("Cannot define value of variable %s more than once.", stringify(path)));
                 }
@@ -60,6 +59,21 @@ public class Scope {
 
     private boolean isEmpty() {
         return structure.isEmpty();
+    }
+
+    public Scope subScope(List<String> path) {
+        if (path == null || path.isEmpty()) {
+            return this;
+        }
+
+        Scope scope = this;
+        for (String element: path) {
+            scope = scope.getStructure().get(element);
+            if (scope == null) {
+                return scope;
+            }
+        }
+        return scope;
     }
 
 }

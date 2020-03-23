@@ -3,16 +3,23 @@ package io.scicast.streamesh.core.internal.reflect.handler;
 import io.scicast.streamesh.core.StreameshContext;
 import io.scicast.streamesh.core.internal.reflect.*;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class LocallyScopedHandler implements GrammarMarkerHandler<LocallyScoped> {
 
+
+    private Map<Class<? extends ScopedInstanceFactory>, ScopedInstanceFactory> factories = new HashMap<>();
+    private StreameshContext context;
+
     @Override
     public HandlerResult handle(ScopeContext scopeContext, StreameshContext context) {
+        this.context = context;
         LocallyScoped annotation = (LocallyScoped) scopeContext.getAnnotation();
 
         if (!annotation.as().isBlank()) {
@@ -27,7 +34,7 @@ public class LocallyScopedHandler implements GrammarMarkerHandler<LocallyScoped>
             if (!(scopeContext.getTarget() instanceof Class)) {
                 throw new IllegalArgumentException("'using' can only be used on type targets, not fields. Use 'as' instead");
             }
-            String using = extractUsingValue(scopeContext, annotation);
+            String using = extractValueFromUsingField(scopeContext, annotation);
 
             List<String> path = scopeContext.getParentPath().stream().collect(Collectors.toList());
             path.add(using);
@@ -43,7 +50,7 @@ public class LocallyScopedHandler implements GrammarMarkerHandler<LocallyScoped>
 
     }
 
-    private String extractUsingValue(ScopeContext scopeContext, LocallyScoped annotation) {
+    private String extractValueFromUsingField(ScopeContext scopeContext, LocallyScoped annotation) {
         Class<?> clazz = (Class<?>) scopeContext.getTarget();
         Field f;
         try {
@@ -62,8 +69,24 @@ public class LocallyScopedHandler implements GrammarMarkerHandler<LocallyScoped>
     private HandlerResult buildResult(ScopeContext scopeContext, Scope childScope, List<String> path) {
         return HandlerResult.builder()
                 .targetMountPoint(path)
-                .targetValue(scopeContext.getInstance())
-                .resultScope(scopeContext.getScope().attach(childScope, path))
+                .targetValue(buildTargetInstance(scopeContext))
+                .resultScope(scopeContext.getScope().attach(childScope, path, false))
                 .build();
+    }
+
+    private Object buildTargetInstance(ScopeContext scopeContext) {
+        AnnotatedElement target = scopeContext.getTarget();
+        if (target instanceof Class
+            || ((target instanceof  Field) && !((Field) target).getType().equals(String.class))) {
+            return scopeContext.getInstance();
+        } else {
+            LocallyScoped annotation = (LocallyScoped) scopeContext.getAnnotation();
+            ScopedInstanceFactory factory = factories.get(annotation.factory());
+            if (factory == null) {
+                factory = ReflectionUtils.instantiateFactory(annotation.factory());
+                factories.put(annotation.factory(), factory.getClass().cast(factory));
+            }
+            return factory.create(context, annotation, (String) scopeContext.getInstance());
+        }
     }
 }
