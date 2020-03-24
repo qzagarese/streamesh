@@ -41,6 +41,7 @@ public class ResolvableHandler implements GrammarMarkerHandler<Resolvable> {
             resultScope = resultScope.attach(subsScope, scopeContext.getParentPath(), true);
         }
 
+
         return HandlerResult.builder()
                 .resultScope(resultScope)
                 .targetMountPoint(scopeContext.getParentPath())
@@ -54,11 +55,20 @@ public class ResolvableHandler implements GrammarMarkerHandler<Resolvable> {
             basePath = new ArrayList<>();
             scopePath.remove(0);
         } else if (scopePath.get(0).equals("parent")) {
+            List<String> cleanedScopePath = scopePath.stream()
+                    .filter(s -> !s.equals("parent"))
+                    .collect(Collectors.toList());
+
+            int offset = scopePath.size() - cleanedScopePath.size();
             basePath = scopeContext.getParentPath();
-            if (basePath.size() > 0) {
-                basePath.remove(basePath.size() - 1);
+
+            while (offset > 0) {
+                if (basePath.size() - offset > 0) {
+                    basePath.remove(basePath.size() - offset);
+                }
+                offset--;
             }
-            scopePath.remove(0);
+            scopePath = cleanedScopePath;
         } else {
             basePath = scopeContext.getParentPath();
         }

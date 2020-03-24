@@ -10,8 +10,12 @@ import java.util.List;
 
 public class FlowScopedHandler implements GrammarMarkerHandler<FlowScoped> {
 
+
+
     @Override
     public HandlerResult handle(ScopeContext scopeContext, StreameshContext streameshContext) {
+        ReflectionUtils.logState(scopeContext);
+
         FlowScoped annotation = (FlowScoped) scopeContext.getAnnotation();
 
         if (!annotation.as().isBlank()) {

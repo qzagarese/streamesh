@@ -1,16 +1,36 @@
 package io.scicast.streamesh.core.internal.reflect;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.scicast.streamesh.core.internal.reflect.handler.ScopedInstanceFactory;
+import lombok.SneakyThrows;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ReflectionUtils {
+
+    static ObjectMapper mapper = new ObjectMapper().configure(SerializationFeature.INDENT_OUTPUT, true);
+    static PrintStream stream;
+
+    static {
+        try {
+            stream = new PrintStream(new FileOutputStream("scope-history.txt"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public static Object getFieldValue(Object annotatedInstance, Field field) {
         boolean accessible = field.canAccess(annotatedInstance);
@@ -62,4 +82,41 @@ public class ReflectionUtils {
                 .collect(Collectors.toList());
     }
 
+    public static boolean shouldScanType(Object fieldValue) {
+        if (fieldValue == null) {
+            return false;
+        }
+        Class<?> target;
+        if (fieldValue instanceof Collection) {
+            Collection<?> c = (Collection) fieldValue;
+            if (c.isEmpty()) {
+                return false;
+            }
+            target = c.stream().findFirst().get().getClass();
+        } else {
+            target = fieldValue.getClass();
+        }
+        return !getMarkerAnnotations(target).isEmpty();
+    }
+
+    public static void logState(ScopeContext scopeContext) {
+        if (!scopeContext.getParentPath().isEmpty() && scopeContext.getParentPath().get(0).equals("merger")) {
+
+            String context = "";
+            context += scopeContext.getTarget() instanceof Class
+                    ? "Class: " + ((Class) scopeContext.getTarget()).getSimpleName()
+                    : "Field: " + ((Field) scopeContext.getTarget()).getDeclaringClass().getSimpleName() + "." + ((Field) scopeContext.getTarget()).getName();
+            stream.println("Context - " + context);
+            stream.println("Annotation: " + scopeContext.getAnnotation().annotationType().getSimpleName());
+            stream.println("Path: " + scopeContext.getParentPath().stream().collect(Collectors.joining("/")));
+            try {
+                String json = mapper.writeValueAsString(scopeContext.getScope().getStructure().get("merger"));
+                stream.append(json);
+                stream.println();
+                stream.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }

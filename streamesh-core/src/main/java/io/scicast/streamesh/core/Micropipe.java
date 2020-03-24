@@ -22,10 +22,10 @@ public class Micropipe implements  Definition {
     private String imageId;
     private String description;
 
-    @LocallyScoped(as = "input")
-    private TaskInput inputMapping;
-
     @LocallyScoped(as = "output")
     private List<TaskOutput> outputMapping;
+
+    @LocallyScoped(as = "input")
+    private TaskInput inputMapping;
 
 }

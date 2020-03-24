@@ -35,14 +35,13 @@ public class Scope {
         }
         Scope parent = this;
         for(int i = 0; i < path.size(); i++) {
-            Scope target = structure.get(path.get(i));
+            Scope target = parent.getStructure().get(path.get(i));
             if (target == null) {
                 target = Scope.builder().build();
                 parent.getStructure().put(path.get(i), target);
             }
             if (i == (path.size() - 1)) {
-                Scope currentValue = parent.getStructure().get(path.get(i));
-                if (currentValue != null && (!currentValue.isEmpty()) && !overwrite) {
+                if (!target.isEmpty() && !overwrite) {
                     throw new IllegalArgumentException(
                             String.format("Cannot define value of variable %s more than once.", stringify(path)));
                 }
@@ -70,10 +69,27 @@ public class Scope {
         for (String element: path) {
             scope = scope.getStructure().get(element);
             if (scope == null) {
-                return scope;
+                return null;
             }
         }
         return scope;
     }
 
+    public boolean pathExists(List<String> path) {
+        if (path == null) {
+            return false;
+        }
+        if (path.isEmpty()) {
+            return true;
+        }
+        Scope parent = this;
+        for(int i =0; i < path.size(); i++) {
+            Scope target = parent.getStructure().get(path.get(i));
+            if (target == null) {
+                return false;
+            }
+            parent = target;
+        }
+        return true;
+    }
 }

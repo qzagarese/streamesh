@@ -5,6 +5,7 @@ output:
   - name: report
     target: ${plotter.output.plot}
 
+
 pipes:
   - type: simple-db-reader
     as: db-reader
@@ -42,7 +43,7 @@ pipes:
       - target: ${urls}
         value: ${s3-manhattan.output.manhattan-properties}
       - target: ${urls}
-        value: ${s3-other.output.other-properties}
+        value: ${s3-others.output.other-properties}
     output:
       - target: ${output}
         as: all-properties

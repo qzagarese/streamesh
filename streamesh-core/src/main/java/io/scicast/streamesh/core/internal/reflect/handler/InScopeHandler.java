@@ -9,6 +9,8 @@ public class InScopeHandler implements GrammarMarkerHandler<InScope> {
 
     @Override
     public HandlerResult handle(ScopeContext scopeContext, StreameshContext context) {
+        ReflectionUtils.logState(scopeContext);
+
         return HandlerResult.builder()
                 .resultScope(scopeContext.getScope())
                 .targetMountPoint(scopeContext.getParentPath())

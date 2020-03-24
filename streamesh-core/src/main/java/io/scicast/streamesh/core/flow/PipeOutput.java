@@ -12,7 +12,7 @@ import lombok.*;
 @LocallyScoped(using = "as")
 public class PipeOutput {
 
-    @Resolvable(scope = "parent.type.output")
+    @Resolvable(scope = "parent.parent.type.output")
     private String target;
 
     private String as;

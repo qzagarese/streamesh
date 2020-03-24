@@ -67,7 +67,11 @@ public class FlowGraph {
 
         private String name;
         private boolean executable;
+
+        @Builder.Default
         private Set<FlowEdge> incomingLinks = new HashSet<>();
+
+        @Builder.Default
         private Set<FlowEdge> outgoingLinks = new HashSet<>();
 
         public void addIncomingLink(FlowEdge edge) {

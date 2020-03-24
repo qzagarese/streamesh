@@ -20,7 +20,6 @@ public class ScopeFactory {
 
     public Scope create(FlowDefinition definition) {
         Scope scope = Scope.builder()
-                .value(definition)
                 .build();
         ScopeContext context = ScopeContext.builder()
                 .instance(definition)
@@ -30,7 +29,23 @@ public class ScopeFactory {
                 .scope(scope)
                 .scanList(new ArrayList())
                 .build();
-        return scan(context);
+        Scope fullScope = scan(context);
+        verifyDependencies(fullScope);
+
+        return fullScope;
+    }
+
+    private void verifyDependencies(Scope fullScope) {
+        verifyDependencyLayer(fullScope, fullScope);
+    }
+
+    private void verifyDependencyLayer(Scope fullScope, Scope current) {
+        current.getDependencies().forEach(path -> {
+            if (!fullScope.pathExists(path)) {
+                throw new IllegalArgumentException("Cannot find symbol " + path.stream().collect(Collectors.joining(".")));
+            }
+        });
+        current.getStructure().values().forEach(scope -> verifyDependencyLayer(fullScope, scope));
     }
 
     private Scope scan(ScopeContext context) {
@@ -59,35 +74,34 @@ public class ScopeFactory {
 
             ScopeContext childContext;
             Scope childScope;
+
             if (child.getMultiplicity().equals(ScannableItem.Multiplicity.SINGLE)) {
-
-                childContext = cumulativeContext.get()
-                        .withTypeLevelInstance(child.getValue())
-                        .withInstance(child.getValue())
-                        .withTarget(child.getValue().getClass())
-                        .withParentPath(childMountPoint)
-                        .withScanList(new ArrayList<>());
-
+                childContext = singleChildContext(cumulativeContext.get(), childMountPoint, child.getValue());
                 childScope = scan(childContext);
             } else {
                 Collection<?> children = (Collection) child.getValue();
                 AtomicReference<ScopeContext> childCumulativeContext = new AtomicReference<>(cumulativeContext.get());
                 children.stream().forEach(c -> {
-                    ScopeContext sc = childCumulativeContext.get()
-                            .withTypeLevelInstance(c)
-                            .withInstance(c)
-                            .withTarget(c.getClass())
-                            .withParentPath(childMountPoint)
-                            .withScanList(new ArrayList<>());
+                    ScopeContext sc = singleChildContext(childCumulativeContext.get(), childMountPoint, c);
                     childCumulativeContext.set(childCumulativeContext.get()
                         .withScope(scan(sc)));
                 });
                 childScope = childCumulativeContext.get().getScope();
             }
+
             cumulativeContext.set(cumulativeContext.get()
                     .withScope(childScope));
         });
         return cumulativeContext.get().getScope();
+    }
+
+    private ScopeContext singleChildContext(ScopeContext cumulativeContext, List<String> childMountPoint, Object value) {
+        return cumulativeContext
+                .withTypeLevelInstance(value)
+                .withInstance(value)
+                .withTarget(value.getClass())
+                .withParentPath(childMountPoint)
+                .withScanList(new ArrayList<>());
     }
 
     private ScopeContext processFieldLevelAnnotations(Object annotatedInstance, ScopeContext mainContext) {
@@ -111,7 +125,7 @@ public class ScopeFactory {
 
                     HandlerResult result = getHandler(annotation).handle(fieldLevelContext, streameshContext);
                     // for each field, decide whether the corresponding type should be processed
-                    if(shouldScanFieldType(result.getTargetValue())) {
+                    if(ReflectionUtils.shouldScanType(result.getTargetValue())) {
                         List<String> mountPoint = result.getTargetMountPoint();
                         fieldAggregatedContext.get().getScanList().add(ScannableItem.builder()
                                 .value(result.getTargetValue())
@@ -143,22 +157,7 @@ public class ScopeFactory {
         return cumulativeContext.get();
     }
 
-    private boolean shouldScanFieldType(Object fieldValue) {
-        if (fieldValue == null) {
-            return false;
-        }
-        Class<?> target;
-        if (fieldValue instanceof Collection) {
-            Collection<?> c = (Collection) fieldValue;
-            if (c.isEmpty()) {
-                return false;
-            }
-            target = c.stream().findFirst().get().getClass();
-        } else {
-            target = fieldValue.getClass();
-        }
-        return !ReflectionUtils.getMarkerAnnotations(target).isEmpty();
-    }
+
 
     private GrammarMarkerHandler getHandler(Annotation annotation) {
         GrammarMarkerHandler grammarMarkerHandler = handlers.get(annotation);

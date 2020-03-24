@@ -28,11 +28,11 @@ public class FlowDefinition implements Definition {
     @LocallyScoped(as = "id")
     private String id;
 
-    @LocallyScoped(as = "input")
-    private List<FlowParameter> input;
-
     @LocallyScoped(as = "output")
     private List<FlowOutput> output;
+
+    @LocallyScoped(as = "input")
+    private List<FlowParameter> input;
 
     @InScope
     private List<FlowPipe> pipes;
