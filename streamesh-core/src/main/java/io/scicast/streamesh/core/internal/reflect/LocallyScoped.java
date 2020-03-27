@@ -14,6 +14,7 @@ import java.lang.annotation.Target;
 @FlowGrammarMarker(handler = LocallyScopedHandler.class)
 public @interface LocallyScoped {
 
+    boolean randomName() default false;
     String as() default "";
     String using() default "";
     Class<? extends ScopedInstanceFactory> factory() default FieldValueInstanceFactory.class;

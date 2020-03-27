@@ -1,6 +1,6 @@
 package io.scicast.streamesh.core.internal.reflect;
 
-import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -8,14 +8,21 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.scicast.streamesh.core.Micropipe;
 import io.scicast.streamesh.core.StreameshContext;
 import io.scicast.streamesh.core.StreameshStore;
-import static org.mockito.Mockito.*;
-
 import io.scicast.streamesh.core.flow.FlowDefinition;
+import io.scicast.streamesh.core.flow.FlowGraph;
+import io.scicast.streamesh.core.flow.FlowGraphBuilder;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ScopeFactoryTest {
 
@@ -63,8 +70,35 @@ public class ScopeFactoryTest {
                 .streameshContext(context)
                 .build();
         Scope scope = factory.create(definition);
-        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT).writerFor(Scope.class).writeValue(System.out, scope);
+        FlowGraph graph = new FlowGraphBuilder().build(scope);
 
+//        graph.getNodes().forEach(System.out::println);
+
+
+//        explainScope(scope, new ArrayList<>());
+
+        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT)
+                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+                .writerFor(Scope.class).writeValue(System.out, scope);
+
+    }
+
+    private void explainScope(Scope currentScope, List<String> basePath) {
+        String stringifiedBasePath = basePath.stream().collect(Collectors.joining("/"));
+        Object value = currentScope.getValue();
+        if (value == null) {
+            System.out.println("/" + stringifiedBasePath + " is null.");
+        } else if (value instanceof  String) {
+            System.out.println("/" + stringifiedBasePath + " is " + value.toString());
+        } else {
+            System.out.println("/" + stringifiedBasePath + " is a " + value.getClass().getSimpleName() + "[" + value.hashCode() + "]");
+        }
+
+        currentScope.getStructure().entrySet().forEach(entry -> {
+            explainScope(entry.getValue(),
+                    Stream.concat(basePath.stream(), Stream.of(entry.getKey()))
+                            .collect(Collectors.toList()));
+        });
     }
 
     private static <T> T loadDefinition(String resource, Class<T> clazz) throws IOException {

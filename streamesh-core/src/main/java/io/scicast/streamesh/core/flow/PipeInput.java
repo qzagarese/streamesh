@@ -1,6 +1,7 @@
 package io.scicast.streamesh.core.flow;
 
 import io.scicast.streamesh.core.internal.reflect.InScope;
+import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
 import io.scicast.streamesh.core.internal.reflect.Resolvable;
 import lombok.*;
 
@@ -9,10 +10,10 @@ import lombok.*;
 @With
 @NoArgsConstructor
 @AllArgsConstructor
-@InScope
+@LocallyScoped(randomName = true)
 public class PipeInput {
 
-    @Resolvable(scope = "type.input")
+    @Resolvable(scope = "parent.type.input")
     private String target;
 
     @Resolvable(scope = "root")

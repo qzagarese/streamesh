@@ -65,7 +65,6 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         Scope scope = scopeFactory.create(definition);
 
 
-        definition = definition.withGraph(new FlowGraphBuilder(streameshStore).build(definition));
         streameshStore.storeDefinition(definition.withId(definitionId));
         return definitionId;
     }

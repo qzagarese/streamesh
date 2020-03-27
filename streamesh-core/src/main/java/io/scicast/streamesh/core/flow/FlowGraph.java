@@ -1,20 +1,24 @@
 package io.scicast.streamesh.core.flow;
 
+import io.scicast.streamesh.core.internal.reflect.GraphNode;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class FlowGraph {
 
+    @Getter
     private Set<FlowNode> nodes = new HashSet<>();
 
-    public void createNode(String name, boolean executable) {
+    public void createNode(String name, Object value, GraphNode.NodeType nodeType) {
         FlowNode node = FlowNode.builder()
                 .name(name)
-                .executable(executable)
+                .value(value)
+                .type(nodeType)
                 .build();
         if (nodes.contains(node)) {
             throw new IllegalArgumentException("Duplicate nodes named " + name);
@@ -63,10 +67,12 @@ public class FlowGraph {
     @Getter
     @Builder
     @EqualsAndHashCode(of = "name")
+    @ToString(of = {"name", "value", "type"})
     public static class FlowNode {
 
         private String name;
-        private boolean executable;
+        private Object value;
+        private GraphNode.NodeType type;
 
         @Builder.Default
         private Set<FlowEdge> incomingLinks = new HashSet<>();

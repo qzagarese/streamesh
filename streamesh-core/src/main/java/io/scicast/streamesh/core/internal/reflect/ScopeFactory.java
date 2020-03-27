@@ -40,9 +40,9 @@ public class ScopeFactory {
     }
 
     private void verifyDependencyLayer(Scope fullScope, Scope current) {
-        current.getDependencies().forEach(path -> {
-            if (!fullScope.pathExists(path)) {
-                throw new IllegalArgumentException("Cannot find symbol " + path.stream().collect(Collectors.joining(".")));
+        current.getDependencies().forEach(dependency -> {
+            if (!fullScope.pathExists(dependency.getPath())) {
+                throw new IllegalArgumentException("Cannot find symbol " + dependency.getPath().stream().collect(Collectors.joining(".")));
             }
         });
         current.getStructure().values().forEach(scope -> verifyDependencyLayer(fullScope, scope));

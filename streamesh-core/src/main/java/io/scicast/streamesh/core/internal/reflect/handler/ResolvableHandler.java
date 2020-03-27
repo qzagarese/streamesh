@@ -3,6 +3,7 @@ package io.scicast.streamesh.core.internal.reflect.handler;
 import io.scicast.streamesh.core.StreameshContext;
 import io.scicast.streamesh.core.internal.reflect.*;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,9 +31,14 @@ public class ResolvableHandler implements GrammarMarkerHandler<Resolvable> {
         Scope resultScope = scopeContext.getScope();
         if (ExpressionParser.isExpression(resolvableValue)) {
             List<String> expressionPath = ExpressionParser.parse(resolvableValue);
+            String attribute = ((Field) scopeContext.getTarget()).getName();
+            ValueDependency dependency = ValueDependency.builder()
+                    .attribute(attribute)
+                    .path(Stream.concat(basePath.stream(), expressionPath.stream()).collect(Collectors.toList()))
+                    .build();
 
             Scope subsScope = scopeContext.getScope().subScope(scopeContext.getParentPath());
-            List<String> dependency = Stream.concat(basePath.stream(), expressionPath.stream()).collect(Collectors.toList());
+
             subsScope = subsScope.withDependencies(
                     Stream.concat(
                             subsScope.getDependencies().stream(),
@@ -60,7 +66,7 @@ public class ResolvableHandler implements GrammarMarkerHandler<Resolvable> {
                     .collect(Collectors.toList());
 
             int offset = scopePath.size() - cleanedScopePath.size();
-            basePath = scopeContext.getParentPath();
+            basePath = scopeContext.getParentPath().stream().collect(Collectors.toList());
 
             while (offset > 0) {
                 if (basePath.size() - offset > 0) {

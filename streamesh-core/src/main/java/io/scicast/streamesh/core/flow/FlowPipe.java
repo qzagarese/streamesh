@@ -1,6 +1,7 @@
 package io.scicast.streamesh.core.flow;
 
 import io.scicast.streamesh.core.internal.reflect.FlowScoped;
+import io.scicast.streamesh.core.internal.reflect.GraphNode;
 import io.scicast.streamesh.core.internal.reflect.InScope;
 import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
 import io.scicast.streamesh.core.internal.reflect.handler.DefinitionRefProvider;
@@ -16,6 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @FlowScoped(using = "as")
+@GraphNode(GraphNode.NodeType.INTERNAL)
 public class FlowPipe {
 
     private String as;

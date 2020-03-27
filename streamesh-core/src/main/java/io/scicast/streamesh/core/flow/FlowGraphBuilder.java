@@ -1,33 +1,36 @@
 package io.scicast.streamesh.core.flow;
 
-import io.scicast.streamesh.core.StreameshStore;
+import io.scicast.streamesh.core.internal.reflect.GraphNode;
+import io.scicast.streamesh.core.internal.reflect.Scope;
 
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FlowGraphBuilder {
 
-    private final StreameshStore store;
-
-    public FlowGraphBuilder(StreameshStore store) {
-        this.store = store;
-    }
-
-    public FlowGraph build(FlowDefinition definition) {
+    public FlowGraph build(Scope scope) {
         FlowGraph graph = new FlowGraph();
-//        definition.getOutput().forEach(output -> {
-//            graph.createNode(output.getName(), false);
-//        });
-        definition.getPipes().forEach(pipe -> {
-            Optional.of(store.getDefinitionByName(pipe.getType()))
-                    .orElseThrow(() -> new IllegalArgumentException("Cannot find any component of type " + pipe.getType()));
+        buildNodes(scope, new ArrayList<>(), graph);
 
-            graph.createNode(pipe.getAs(), true);
-        });
-        definition.getInput().forEach(input -> {
-            graph.createNode(input.getName(), false);
-        });
+
 
         return graph;
+    }
+
+    private void buildNodes(Scope scope, List<String> path, FlowGraph graph) {
+        Scope subScope = scope.subScope(path);
+        Object value = subScope != null ? subScope.getValue() : null;
+        GraphNode annotation = value != null ? value.getClass().getAnnotation(GraphNode.class) : null;
+        if (annotation != null) {
+            graph.createNode(path.stream().collect(Collectors.joining(".")), value, annotation.value());
+        }
+        if (subScope != null) {
+            subScope.getStructure().keySet().forEach(entry -> {
+                buildNodes(scope, Stream.concat(path.stream(), Stream.of(entry)).collect(Collectors.toList()), graph);
+            });
+        }
     }
 
 }

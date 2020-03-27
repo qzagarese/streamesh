@@ -1,7 +1,9 @@
 package io.scicast.streamesh.core.internal.reflect;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.With;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -16,10 +18,11 @@ public class Scope {
     private Object value;
 
     @Builder.Default
+    @Getter
     private Map<String, Scope> structure = new HashMap<>();
 
     @Builder.Default
-    private List<List<String>> dependencies = new ArrayList<>();
+    private List<ValueDependency> dependencies = new ArrayList<>();
 
     public Scope attach(Scope childScope, List<String> path, boolean overwrite) {
         if (path == null || path.isEmpty()) {
