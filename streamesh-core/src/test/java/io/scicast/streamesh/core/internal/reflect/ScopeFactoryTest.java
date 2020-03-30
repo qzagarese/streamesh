@@ -13,6 +13,7 @@ import io.scicast.streamesh.core.flow.FlowGraph;
 import io.scicast.streamesh.core.flow.FlowGraphBuilder;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -64,6 +65,7 @@ public class ScopeFactoryTest {
     }
 
     @Test
+    @Ignore
     public void testScopeCreation() throws IOException {
         FlowDefinition definition = loadDefinition("/flows/airbnb-flow.yml", FlowDefinition.class);
         ScopeFactory factory = ScopeFactory.builder()
@@ -80,6 +82,27 @@ public class ScopeFactoryTest {
         jsonMapper.enable(SerializationFeature.INDENT_OUTPUT)
                 .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
                 .writerFor(Scope.class).writeValue(System.out, scope);
+
+    }
+
+    @Test
+    public void testScopeForSubFlow() throws IOException {
+        FlowDefinition airbnb = loadDefinition("/flows/airbnb-flow.yml", FlowDefinition.class);
+        when(streameshStore.getDefinitionByName("airbnb-ny-properties")).thenReturn(airbnb);
+
+        FlowDefinition definition = loadDefinition("/flows/recursive-airbnb-flow.yml", FlowDefinition.class);
+        ScopeFactory factory = ScopeFactory.builder()
+                .streameshContext(context)
+                .build();
+
+        Scope scope = factory.create(definition);
+        FlowGraph graph = new FlowGraphBuilder().build(scope);
+
+
+        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT)
+                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+                .writerFor(Scope.class).writeValue(System.out, scope);
+
 
     }
 

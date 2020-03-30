@@ -7,6 +7,7 @@ import io.scicast.streamesh.core.internal.reflect.InScope;
 import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -29,13 +30,13 @@ public class FlowDefinition implements Definition {
     private String id;
 
     @LocallyScoped(as = "output")
-    private List<FlowOutput> output;
+    private List<FlowOutput> output = new ArrayList<>();
 
     @LocallyScoped(as = "input")
-    private List<FlowParameter> input;
+    private List<FlowParameter> input = new ArrayList<>();
 
     @InScope
-    private List<FlowPipe> pipes;
+    private List<FlowPipe> pipes = new ArrayList<>();
 
     @JsonIgnore
     private FlowGraph graph;

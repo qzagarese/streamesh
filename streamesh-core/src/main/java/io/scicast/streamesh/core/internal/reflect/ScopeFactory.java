@@ -41,11 +41,35 @@ public class ScopeFactory {
 
     private void verifyDependencyLayer(Scope fullScope, Scope current) {
         current.getDependencies().forEach(dependency -> {
-            if (!fullScope.pathExists(dependency.getPath())) {
-                throw new IllegalArgumentException("Cannot find symbol " + dependency.getPath().stream().collect(Collectors.joining(".")));
+            List<String> path = dependency.getPath();
+            if (!fullScope.pathExists(path)) {
+                throw new IllegalArgumentException("Cannot find symbol " + dependency.getStringifiedPath());
+            } else {
+                Object targetValue = fullScope.getValue(path);
+                Class<?> targetType = targetValue != null ? targetValue.getClass() : null;
+                if (targetType == null) {
+                    throw new IllegalStateException("Cannot satisfy dependency " + dependency.getStringifiedPath());
+                }
+
+                if (!dependency.getExpectedTargetTypes().isEmpty()) {
+                dependency.getExpectedTargetTypes().stream()
+                        .filter(type -> type.equals(targetType))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalArgumentException("Cannot satisfy dependency "
+                                + dependency.getStringifiedPath()
+                                + buildDetailedMessage(targetType, dependency.getExpectedTargetTypes())));
+                }
+                dependency.setResolvedTargetValue(targetValue);
             }
         });
         current.getStructure().values().forEach(scope -> verifyDependencyLayer(fullScope, scope));
+    }
+
+    private String buildDetailedMessage(Class<?> targetType, List<Class<?>> expectedTargetTypes) {
+        StringBuffer buffer = new StringBuffer("\nExpecting any of: \n");
+        expectedTargetTypes.forEach(t -> buffer.append("\t- " + t.getName() + "\n"));
+        buffer.append("Found: " + targetType.getName());
+        return buffer.toString();
     }
 
     private Scope scan(ScopeContext context) {

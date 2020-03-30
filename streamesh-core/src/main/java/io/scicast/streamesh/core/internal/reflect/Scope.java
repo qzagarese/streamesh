@@ -63,6 +63,11 @@ public class Scope {
         return structure.isEmpty();
     }
 
+    public Object getValue(List<String> path) {
+        Scope scope = this.subScope(path);
+        return scope != null ? scope.getValue() : null;
+    }
+
     public Scope subScope(List<String> path) {
         if (path == null || path.isEmpty()) {
             return this;

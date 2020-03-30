@@ -14,4 +14,5 @@ public @interface Resolvable {
 
     String scope();
 
+    Class<?>[] expectsAnyOf() default {};
 }
