@@ -12,6 +12,7 @@ import java.lang.annotation.Target;
 @FlowGrammarMarker(handler = FlowScopedHandler.class)
 public @interface FlowScoped {
 
+    boolean randomName() default false;
     String as() default "";
     String using() default "";
 

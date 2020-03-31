@@ -181,8 +181,6 @@ public class ScopeFactory {
         return cumulativeContext.get();
     }
 
-
-
     private GrammarMarkerHandler getHandler(Annotation annotation) {
         GrammarMarkerHandler grammarMarkerHandler = handlers.get(annotation);
         if (grammarMarkerHandler == null) {

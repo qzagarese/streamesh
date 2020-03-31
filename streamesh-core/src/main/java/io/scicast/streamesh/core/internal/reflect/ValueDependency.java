@@ -15,6 +15,7 @@ public class ValueDependency {
 
     private String attribute;
     private List<String> path;
+    private Resolvable.DataFlowDirection dataFlowDirection;
 
     @Setter
     @Getter

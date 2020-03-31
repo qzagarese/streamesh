@@ -13,6 +13,10 @@ import java.lang.annotation.Target;
 public @interface Resolvable {
 
     String scope();
-
     Class<?>[] expectsAnyOf() default {};
+    DataFlowDirection dataFlow();
+
+    enum DataFlowDirection {
+        INCOMING, OUTGOING
+    }
 }

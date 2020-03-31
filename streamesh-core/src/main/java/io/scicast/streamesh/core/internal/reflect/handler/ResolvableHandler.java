@@ -36,6 +36,7 @@ public class ResolvableHandler implements GrammarMarkerHandler<Resolvable> {
                     .attribute(attribute)
                     .path(Stream.concat(basePath.stream(), expressionPath.stream()).collect(Collectors.toList()))
                     .expectedTargetTypes(Arrays.asList(annotation.expectsAnyOf()).stream().collect(Collectors.toList()))
+                    .dataFlowDirection(annotation.dataFlow())
                     .build();
 
             Scope subsScope = scopeContext.getScope().subScope(scopeContext.getParentPath());

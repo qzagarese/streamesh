@@ -30,12 +30,15 @@ public class FlowDefinition implements Definition {
     private String id;
 
     @LocallyScoped(as = "output")
+    @Builder.Default
     private List<FlowOutput> output = new ArrayList<>();
 
     @LocallyScoped(as = "input")
+    @Builder.Default
     private List<FlowParameter> input = new ArrayList<>();
 
     @InScope
+    @Builder.Default
     private List<FlowPipe> pipes = new ArrayList<>();
 
     @JsonIgnore

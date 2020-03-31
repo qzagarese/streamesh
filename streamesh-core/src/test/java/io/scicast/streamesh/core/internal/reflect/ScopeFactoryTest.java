@@ -17,7 +17,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -65,7 +65,6 @@ public class ScopeFactoryTest {
     }
 
     @Test
-    @Ignore
     public void testScopeCreation() throws IOException {
         FlowDefinition definition = loadDefinition("/flows/airbnb-flow.yml", FlowDefinition.class);
         ScopeFactory factory = ScopeFactory.builder()
@@ -76,16 +75,23 @@ public class ScopeFactoryTest {
 
 //        graph.getNodes().forEach(System.out::println);
 
+        List<String> path = Arrays.asList("s3-others", "type", "input", "bucket");
+        Scope subScope = scope.subScope(path);
+
+        List<String> pathByValue = scope.getPathByValue(subScope.getValue());
+
+        pathByValue.forEach(System.out::println);
 
 //        explainScope(scope, new ArrayList<>());
 
-        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT)
-                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-                .writerFor(Scope.class).writeValue(System.out, scope);
+//        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT)
+//                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+//                .writerFor(Scope.class).writeValue(System.out, scope);
 
     }
 
     @Test
+    @Ignore
     public void testScopeForSubFlow() throws IOException {
         FlowDefinition airbnb = loadDefinition("/flows/airbnb-flow.yml", FlowDefinition.class);
         when(streameshStore.getDefinitionByName("airbnb-ny-properties")).thenReturn(airbnb);

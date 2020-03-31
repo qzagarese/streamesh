@@ -1,7 +1,9 @@
 package io.scicast.streamesh.core;
 
+import io.scicast.streamesh.core.internal.reflect.GraphNode;
 import io.scicast.streamesh.core.internal.reflect.InScope;
 import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
+import io.scicast.streamesh.core.internal.reflect.handler.MicropipeGraphNodeHandler;
 import lombok.*;
 
 import java.util.List;
@@ -12,8 +14,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-@InScope
-public class Micropipe implements  Definition {
+
+@InScope(includeAnonymousReference = true)
+@GraphNode(value = GraphNode.NodeType.INTERNAL, handler = MicropipeGraphNodeHandler.class)
+public class Micropipe implements Definition {
 
     private String id;
     private String name;

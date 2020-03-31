@@ -37,6 +37,7 @@ public class DefinitionRefProvider implements ScopedInstanceFactory<Object> {
                         .name(output.getName())
                         .build())
                     .collect(Collectors.toList()))
+                .definition(definition)
                 .build();
     }
 }

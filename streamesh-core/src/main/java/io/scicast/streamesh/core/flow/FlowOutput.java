@@ -17,7 +17,8 @@ public class FlowOutput {
 
     private String name;
 
-    @Resolvable(scope = "root", expectsAnyOf = { FlowParameter.class, PipeOutput.class })
+    @Resolvable(scope = "root", expectsAnyOf = { FlowParameter.class, PipeOutput.class },
+        dataFlow = Resolvable.DataFlowDirection.INCOMING)
     private String target;
 
 }

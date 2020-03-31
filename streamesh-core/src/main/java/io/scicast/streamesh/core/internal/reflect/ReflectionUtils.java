@@ -2,6 +2,7 @@ package io.scicast.streamesh.core.internal.reflect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import io.scicast.streamesh.core.internal.reflect.handler.GraphNodeHandler;
 import io.scicast.streamesh.core.internal.reflect.handler.ScopedInstanceFactory;
 import lombok.SneakyThrows;
 
@@ -58,6 +59,11 @@ public class ReflectionUtils {
     public static ScopedInstanceFactory instantiateFactory(Class<? extends ScopedInstanceFactory> concreteType) {
         return (ScopedInstanceFactory) doInstantiation(concreteType, "Factories");
     }
+
+    public static GraphNodeHandler instantiateGraphNodeHandler(Class<? extends GraphNodeHandler> concreteType) {
+        return (GraphNodeHandler) doInstantiation(concreteType, "Graph node handlers");
+    }
+
 
     private static Object doInstantiation(Class<?> type, String instanceType) {
         Object instance;

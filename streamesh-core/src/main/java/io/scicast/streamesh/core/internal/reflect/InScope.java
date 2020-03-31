@@ -11,4 +11,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @FlowGrammarMarker(handler = InScopeHandler.class)
 public @interface InScope {
+
+    boolean includeAnonymousReference() default false;
+
 }

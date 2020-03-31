@@ -7,6 +7,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 public class FlowScopedHandler implements GrammarMarkerHandler<FlowScoped> {
 
@@ -17,27 +18,25 @@ public class FlowScopedHandler implements GrammarMarkerHandler<FlowScoped> {
         ReflectionUtils.logState(scopeContext);
 
         FlowScoped annotation = (FlowScoped) scopeContext.getAnnotation();
-
-        if (!annotation.as().isBlank()) {
-            Scope scope = Scope.builder()
-                    .value(scopeContext.getInstance())
-                    .build();
-            List<String> path = Arrays.asList(annotation.as());
-            return buildResult(scopeContext, scope, path);
+        String pathValue;
+        if (annotation.randomName()) {
+            pathValue = UUID.randomUUID().toString();
+        } else if (!annotation.as().isBlank()) {
+            pathValue = annotation.as();
         } else if (!annotation.using().isBlank()) {
             if (!(scopeContext.getTarget() instanceof Class)) {
                 throw new IllegalArgumentException("'using' can only be used on type targets, not fields. Use 'as' instead");
             }
-            String using = extractUsingValue(scopeContext, annotation);
-            Scope scope = Scope.builder()
-                    .value(scopeContext.getInstance())
-                    .build();
-            return buildResult(scopeContext, scope, Arrays.asList(using));
+            pathValue = extractUsingValue(scopeContext, annotation);
         } else {
             throw new IllegalArgumentException(
                     "Either a value for the 'as' property or for the 'using' one must be provided on instances of "
                             + annotation.annotationType().getName());
         }
+        Scope scope = Scope.builder()
+                .value(scopeContext.getInstance())
+                .build();
+        return buildResult(scopeContext, scope, Arrays.asList(pathValue));
 
     }
 
