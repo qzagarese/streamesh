@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.scicast.streamesh.core.Micropipe;
+import io.scicast.streamesh.core.MicroPipe;
 import io.scicast.streamesh.core.StreameshContext;
 import io.scicast.streamesh.core.StreameshStore;
 import io.scicast.streamesh.core.flow.FlowDefinition;
@@ -17,8 +17,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,10 +34,10 @@ public class ScopeFactoryTest {
     private static final String MICROPIPES_PATH = "/micropipes/";
 
     private static StreameshStore streameshStore;
-    private static Micropipe merger;
-    private static Micropipe plotter;
-    private static Micropipe s3Downloader;
-    private static Micropipe dbReader;
+    private static MicroPipe merger;
+    private static MicroPipe plotter;
+    private static MicroPipe s3Downloader;
+    private static MicroPipe dbReader;
     private static ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private StreameshContext context;
 
@@ -45,10 +45,10 @@ public class ScopeFactoryTest {
 
     @BeforeClass
     public static void setUpClass() throws IOException {
-        merger = loadDefinition(MICROPIPES_PATH + "http-data-merger.yml", Micropipe.class);
-        plotter = loadDefinition(MICROPIPES_PATH + "python-plotter.yml", Micropipe.class);
-        s3Downloader = loadDefinition(MICROPIPES_PATH + "s3-downloader.yml", Micropipe.class);
-        dbReader = loadDefinition(MICROPIPES_PATH + "simple-db-reader.yml", Micropipe.class);
+        merger = loadDefinition(MICROPIPES_PATH + "http-data-merger.yml", MicroPipe.class).withId(UUID.randomUUID().toString());
+        plotter = loadDefinition(MICROPIPES_PATH + "python-plotter.yml", MicroPipe.class).withId(UUID.randomUUID().toString());
+        s3Downloader = loadDefinition(MICROPIPES_PATH + "s3-downloader.yml", MicroPipe.class).withId(UUID.randomUUID().toString());
+        dbReader = loadDefinition(MICROPIPES_PATH + "simple-db-reader.yml", MicroPipe.class).withId(UUID.randomUUID().toString());
 
         streameshStore = mock(StreameshStore.class);
         when(streameshStore.getDefinitionByName(MERGER_NAME)).thenReturn(merger);
@@ -73,14 +73,10 @@ public class ScopeFactoryTest {
         Scope scope = factory.create(definition);
         FlowGraph graph = new FlowGraphBuilder().build(scope);
 
-//        graph.getNodes().forEach(System.out::println);
+        System.out.println(graph.toDot());
 
-        List<String> path = Arrays.asList("s3-others", "type", "input", "bucket");
-        Scope subScope = scope.subScope(path);
-
-        List<String> pathByValue = scope.getPathByValue(subScope.getValue());
-
-        pathByValue.forEach(System.out::println);
+//        graph.getNodes().stream()
+//                .forEach(System.out::println);
 
 //        explainScope(scope, new ArrayList<>());
 
@@ -91,7 +87,6 @@ public class ScopeFactoryTest {
     }
 
     @Test
-    @Ignore
     public void testScopeForSubFlow() throws IOException {
         FlowDefinition airbnb = loadDefinition("/flows/airbnb-flow.yml", FlowDefinition.class);
         when(streameshStore.getDefinitionByName("airbnb-ny-properties")).thenReturn(airbnb);
@@ -104,10 +99,13 @@ public class ScopeFactoryTest {
         Scope scope = factory.create(definition);
         FlowGraph graph = new FlowGraphBuilder().build(scope);
 
+        graph.getNodes().stream()
+                .forEach(System.out::println);
 
-        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT)
-                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-                .writerFor(Scope.class).writeValue(System.out, scope);
+
+//        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT)
+//                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+//                .writerFor(Scope.class).writeValue(System.out, scope);
 
 
     }

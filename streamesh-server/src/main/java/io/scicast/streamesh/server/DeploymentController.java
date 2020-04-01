@@ -3,7 +3,7 @@ package io.scicast.streamesh.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.scicast.streamesh.core.Definition;
 import io.scicast.streamesh.core.flow.FlowDefinition;
-import io.scicast.streamesh.core.Micropipe;
+import io.scicast.streamesh.core.MicroPipe;
 import io.scicast.streamesh.core.StreameshOrchestrator;
 import io.scicast.streamesh.core.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ public class DeploymentController {
         String type = (String) definitionMap.getOrDefault("type", MICROPIPE_TYPE);
         Definition definition;
         if (type.equals(MICROPIPE_TYPE)) {
-            definition = mapper.convertValue(definitionMap, Micropipe.class);
+            definition = mapper.convertValue(definitionMap, MicroPipe.class);
         } else if (type.equals(FLOW_TYPE)) {
             definition = mapper.convertValue(definitionMap, FlowDefinition.class);
         } else {

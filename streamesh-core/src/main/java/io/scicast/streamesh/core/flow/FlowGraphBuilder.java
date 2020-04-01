@@ -20,10 +20,35 @@ public class FlowGraphBuilder {
     public FlowGraph build(Scope scope) {
         FlowGraph graph = new FlowGraph();
         graph = handleNodeMarkers(scope, new ArrayList<>(), graph);
-
+        graph = handleScopeDependencies(scope, new ArrayList<>(), graph);
 
 
         return graph;
+    }
+
+    private FlowGraph handleScopeDependencies(Scope scope, List<String> path, FlowGraph graph) {
+        Scope subScope = scope.subScope(path);
+        if (subScope == null) {
+            return graph;
+        }
+        subScope.getDependencies().forEach(dependency -> {
+            String from, to;
+            if (dependency.getDataFlowDirection().equals(Resolvable.DataFlowDirection.INCOMING)) {
+                from = dependency.getStringifiedPath();
+                to = path.stream().collect(Collectors.joining("."));
+                graph.connect(from, to, "", dependency.getAttribute());
+            } else {
+                from = path.stream().collect(Collectors.joining("."));
+                to = dependency.getStringifiedPath();
+                graph.connect(from, to, dependency.getAttribute(), "");
+            }
+        });
+        AtomicReference<FlowGraph> graphRef = new AtomicReference<>(graph);
+        subScope.getStructure().keySet().forEach(key -> {
+            graphRef.set(handleScopeDependencies(scope,
+                    Stream.concat(path.stream(), Stream.of(key)).collect(Collectors.toList()), graphRef.get()));
+        });
+        return graphRef.get();
     }
 
     private FlowGraph handleNodeMarkers(Scope scope, List<String> path, FlowGraph graph) {

@@ -6,7 +6,6 @@ import io.scicast.streamesh.core.exception.InvalidCmdParameterException;
 import io.scicast.streamesh.core.exception.MissingParameterException;
 import io.scicast.streamesh.core.exception.NotFoundException;
 import io.scicast.streamesh.core.flow.FlowDefinition;
-import io.scicast.streamesh.core.flow.FlowGraphBuilder;
 import io.scicast.streamesh.core.internal.reflect.Scope;
 import io.scicast.streamesh.core.internal.reflect.ScopeFactory;
 
@@ -51,8 +50,8 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     public String applyDefinition(Definition definition) {
-        if (definition instanceof Micropipe) {
-            return applyMicropipe((Micropipe) definition);
+        if (definition instanceof MicroPipe) {
+            return applyMicropipe((MicroPipe) definition);
         } else if (definition instanceof FlowDefinition){
             return applyFlowDefinition((FlowDefinition) definition);
         } else {
@@ -69,7 +68,7 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         return definitionId;
     }
 
-    private String applyMicropipe(Micropipe micropipe) {
+    private String applyMicropipe(MicroPipe micropipe) {
         String imageId = driver.retrieveContainerImage(micropipe.getImage());
         String definitionId = UUID.randomUUID().toString();
         streameshStore.storeDefinition(micropipe.withImageId(imageId)
@@ -111,10 +110,10 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
 
     public TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input) {
         Definition definition = getDefinition(definitionId);
-        if (!(definition instanceof Micropipe)) {
+        if (!(definition instanceof MicroPipe)) {
             throw new IllegalArgumentException("Cannot schedule tasks for definitions of type " + definition.getType());
         }
-        Micropipe pipe = (Micropipe) definition;
+        MicroPipe pipe = (MicroPipe) definition;
         TaskDescriptor descriptor = driver.scheduleTask(pipe.getImage(),
                 buildCommand(pipe, input),
                 pipe.getOutputMapping(),
@@ -140,13 +139,13 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         return job;
     }
 
-    private void updateIndexes(Micropipe definition, TaskDescriptor descriptor) {
+    private void updateIndexes(MicroPipe definition, TaskDescriptor descriptor) {
         streameshStore.updateJob(definition.getId(),
                 descriptor.withServiceId(definition.getId())
                     .withServiceName(definition.getName()));
     }
 
-    private String buildCommand(Micropipe definition, Map<?, ?> input) {
+    private String buildCommand(MicroPipe definition, Map<?, ?> input) {
         TaskInput inputMapping = definition.getInputMapping();
         String params = inputMapping.getParameters().stream()
                 .map(p -> {

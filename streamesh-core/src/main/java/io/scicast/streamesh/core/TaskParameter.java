@@ -10,7 +10,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @LocallyScoped(using = "name")
-@GraphNode(GraphNode.NodeType.INTERNAL)
 public class TaskParameter {
 
     private String name;

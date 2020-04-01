@@ -6,8 +6,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class FlowGraph {
 
@@ -26,15 +26,19 @@ public class FlowGraph {
         nodes.add(node);
     }
 
-    public void connect(String downStream, String upStream, String downStreamInput, String upStreamOutput) {
-        FlowNode from = getNode(upStream);
-        FlowNode to = getNode(downStream);
+    public void connect(String source, String destination) {
+        connect(source, destination, "", "");
+    }
+
+    public void connect(String source, String destination, String sourceLabel, String destinationLabel) {
+        FlowNode from = getNode(source);
+        FlowNode to = getNode(destination);
 
         FlowEdge edge = FlowEdge.builder()
                 .destination(to)
                 .source(from)
-                .destinationInputName(downStreamInput)
-                .sourceOutputName(upStreamOutput)
+                .sourceLabel(sourceLabel)
+                .destinationLabel(destinationLabel)
                 .build();
 
         if (cycleDetected(from, to)) {
@@ -63,6 +67,32 @@ public class FlowGraph {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Cannot find node " + name));
     }
+
+    public String toDot() {
+        Map<String, String> varToName = new HashMap<>();
+        Map<String, String> nameToVar = new HashMap<>();
+        Map<String, FlowNode> nameToNode = new HashMap<>();
+         List<FlowNode> nodeList = nodes.stream().collect(Collectors.toList());
+        for (int i = 0; i < nodeList.size(); i++) {
+            varToName.put("node" + i, nodeList.get(i).getName());
+            nameToVar.put(nodeList.get(i).getName(), "node" + i);
+            nameToNode.put(nodeList.get(i).getName(), nodeList.get(i));
+        }
+        StringBuffer buf = new StringBuffer("digraph {\n");
+        varToName.entrySet().forEach(entry -> {
+            buf.append("\t" + entry.getKey() + "[label=\"" + entry.getValue() + "\"];\n");
+        });
+        varToName.entrySet().forEach(entry -> {
+            FlowNode node = nameToNode.get(entry.getValue());
+            node.getOutgoingLinks().forEach(edge -> {
+                buf.append("\t" + nameToVar.get(node.getName()) + " -> "
+                        + nameToVar.get(edge.getDestination().getName()) + ";\n");
+            });
+        });
+        buf.append("}\n");
+        return buf.toString();
+    }
+
 
     @Getter
     @Builder
@@ -96,9 +126,9 @@ public class FlowGraph {
     public static class FlowEdge {
 
         private FlowNode source;
-        private String sourceOutputName;
+        private String sourceLabel;
         private FlowNode destination;
-        private String destinationInputName;
+        private String destinationLabel;
 
     }
 }

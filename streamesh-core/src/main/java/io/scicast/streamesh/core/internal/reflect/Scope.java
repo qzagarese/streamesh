@@ -6,8 +6,10 @@ import lombok.Getter;
 import lombok.With;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Builder
 @Getter
@@ -25,7 +27,7 @@ public class Scope {
     private List<ValueDependency> dependencies = new ArrayList<>();
 
     @Builder.Default
-    private Map<Integer, String> hashCodeToPathSegment = new HashMap<>();
+    private Map<Integer, List<String>> hashCodeToPathSegment = new HashMap<>();
 
     public Scope attach(Scope childScope, List<String> path, boolean overwrite) {
         if (path == null || path.isEmpty()) {
@@ -41,7 +43,9 @@ public class Scope {
         }
         Scope parent = this;
         for(int i = 0; i < path.size(); i++) {
-            parent.hashCodeToPathSegment.put(childScope.getValue().hashCode(), path.get(i));
+
+            indexByValueHashCode(parent, childScope.getValue().hashCode(), path.get(i));
+
             Scope target = parent.getStructure().get(path.get(i));
             if (target == null) {
                 target = Scope.builder().build();
@@ -57,6 +61,19 @@ public class Scope {
             parent = target;
         }
         return this;
+    }
+
+    private void indexByValueHashCode(Scope parent, int valueHashCode, String pathSegment) {
+        List<String> previousSegments = parent.hashCodeToPathSegment.get(valueHashCode);
+//            if (previousSegment != null && !overwrite) {
+//                throw new IllegalStateException(String.format("Hashcode %d (type: %s) is already mapped to a path starting by %s",
+//                        childScope.getValue().hashCode(), childScope.getValue().getClass().getName(), previousSegment));
+//            }
+        if (previousSegments == null) {
+            previousSegments = new ArrayList<>();
+        }
+        List<String> currentSegments = Stream.concat(previousSegments.stream(), Stream.of(pathSegment)).collect(Collectors.toList());
+        parent.hashCodeToPathSegment.put(valueHashCode, currentSegments);
     }
 
     private String stringify(List<String> path) {
@@ -88,16 +105,30 @@ public class Scope {
     }
 
     public List<String> getPathByValue(Object value) {
+        return getPathByValue(value, new ArrayList<>());
+    }
+
+    public List<String> getPathByValue(Object value, List<String> hint) {
         List<String> path = new ArrayList<>();
         Scope target = this;
-        String pathSegment = target.hashCodeToPathSegment.get(value.hashCode());
-        while (pathSegment != null) {
-            path.add(pathSegment);
-            target = target.getStructure().get(pathSegment);
+        AtomicInteger counter = new AtomicInteger(0);
+        List<String> pathSegments = target.hashCodeToPathSegment.get(value.hashCode());
+        while (pathSegments != null) {
+            String segment = null;
+            if (hint.size() > counter.get()) {
+                segment = pathSegments.stream()
+                        .filter(s -> s.equals(hint.get(counter.get())))
+                        .findFirst()
+                        .orElse(null);
+            }
+            segment = (segment == null) ? pathSegments.get(0) : segment;
+            path.add(segment);
+            target = target.getStructure().get(segment);
             if (target.getValue() != null && value.hashCode() == target.getValue().hashCode()) {
                 return path;
             }
-            pathSegment = target.hashCodeToPathSegment.get(value.hashCode());
+            pathSegments = target.hashCodeToPathSegment.get(value.hashCode());
+            counter.incrementAndGet();
         }
         return null;
     }

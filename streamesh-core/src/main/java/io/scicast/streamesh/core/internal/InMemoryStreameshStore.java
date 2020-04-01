@@ -1,7 +1,7 @@
 package io.scicast.streamesh.core.internal;
 
 import io.scicast.streamesh.core.Definition;
-import io.scicast.streamesh.core.Micropipe;
+import io.scicast.streamesh.core.MicroPipe;
 import io.scicast.streamesh.core.TaskDescriptor;
 import io.scicast.streamesh.core.StreameshStore;
 
@@ -16,7 +16,7 @@ public class InMemoryStreameshStore implements StreameshStore {
     private Map<String, Definition> definitions = new HashMap<>();
     private Map<String, Definition> definitionsByName = new HashMap<>();
     private Map<String, TaskDescriptor> jobs = new HashMap<String, TaskDescriptor>();
-    private Map<Micropipe, Set<TaskDescriptor>> pipesToTasks = new HashMap<Micropipe, Set<TaskDescriptor>>();
+    private Map<MicroPipe, Set<TaskDescriptor>> pipesToTasks = new HashMap<MicroPipe, Set<TaskDescriptor>>();
 
     public InMemoryStreameshStore() {
     }
@@ -76,7 +76,7 @@ public class InMemoryStreameshStore implements StreameshStore {
     public void updateJob(String definitionId, TaskDescriptor descriptor) {
         jobs.put(descriptor.getId(), descriptor);
         Definition definition = getDefinitionById(definitionId);
-        if (!(definition instanceof  Micropipe)) {
+        if (!(definition instanceof MicroPipe)) {
             throw new IllegalArgumentException("Cannot associate job to definition of type " + definition.getType());
         }
         Set<TaskDescriptor> jobDescriptors = pipesToTasks.get(definition);
@@ -86,6 +86,6 @@ public class InMemoryStreameshStore implements StreameshStore {
             jobDescriptors.remove(descriptor);
             jobDescriptors.add(descriptor);
         }
-        pipesToTasks.put((Micropipe) definition, jobDescriptors);
+        pipesToTasks.put((MicroPipe) definition, jobDescriptors);
     }
 }

@@ -1,7 +1,7 @@
 package io.scicast.streamesh.core.internal.reflect.handler;
 
 import io.scicast.streamesh.core.Definition;
-import io.scicast.streamesh.core.Micropipe;
+import io.scicast.streamesh.core.MicroPipe;
 import io.scicast.streamesh.core.StreameshContext;
 import io.scicast.streamesh.core.flow.FlowDefinition;
 import io.scicast.streamesh.core.flow.FlowOutputRef;
@@ -16,7 +16,7 @@ public class DefinitionRefProvider implements ScopedInstanceFactory<Object> {
     @Override
     public Object create(StreameshContext context, LocallyScoped annotation, String instance) {
         Definition definition = context.getStore().getDefinitionByName(instance);
-        if (definition instanceof Micropipe) {
+        if (definition instanceof MicroPipe) {
             return definition;
         } else {
             return buildReference((FlowDefinition) definition);
