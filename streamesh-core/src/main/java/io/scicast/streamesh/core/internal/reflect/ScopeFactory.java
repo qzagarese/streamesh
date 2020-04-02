@@ -1,10 +1,15 @@
 package io.scicast.streamesh.core.internal.reflect;
 
+import io.scicast.streamesh.core.MicroPipe;
 import io.scicast.streamesh.core.StreameshContext;
 import io.scicast.streamesh.core.flow.FlowDefinition;
+import io.scicast.streamesh.core.flow.FlowPipe;
+import io.scicast.streamesh.core.flow.FlowReference;
+import io.scicast.streamesh.core.flow.PipeInput;
 import lombok.Builder;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -31,8 +36,83 @@ public class ScopeFactory {
                 .build();
         Scope fullScope = scan(context);
         verifyDependencies(fullScope);
-
+        validatePipesInputBindings(fullScope);
         return fullScope;
+    }
+
+    private void validatePipesInputBindings(Scope scope) {
+        List<Scope> pipeScopes = scope.getStructure().values().stream()
+                .filter(s -> s.getValue() instanceof FlowPipe)
+                .collect(Collectors.toList());
+
+        validateMicroPipesBindings(pipeScopes);
+        validateFlowReferencesBindings(pipeScopes);
+
+    }
+
+    private void validateFlowReferencesBindings(List<Scope> pipeScopes) {
+        pipeScopes.forEach(pipeScope -> {
+            Scope type = pipeScope.getStructure().values().stream()
+                    .filter(s -> s.getValue() instanceof FlowReference)
+                    .findFirst()
+                    .orElse(null);
+            List<Scope> inputScopes = getPipeInputScopes(pipeScope);
+            if (type != null && type.getValue() != null) {
+                FlowReference fr = (FlowReference) type.getValue();
+                fr.getInput().forEach(parameter -> {
+                    ValueDependency dependency = inputScopes.stream()
+                            .flatMap(s -> s.getDependencies().stream())
+                            .filter(d -> d.getResolvedTargetValue().equals(parameter))
+                            .findFirst()
+                            .orElse(null);
+                    if (dependency == null && !parameter.isOptional()) {
+                        throw new IllegalArgumentException(
+                                String.format("Pipe stage %s is referencing flow %s, " +
+                                                "but is not providing the mandatory parameter %s.",
+                                        ((FlowPipe) pipeScope.getValue()).getAs(),
+                                        fr.getDefinition().getName(),
+                                        parameter.getName()));
+                    }
+                });
+            }
+        });
+    }
+
+    private void validateMicroPipesBindings(List<Scope> pipeScopes) {
+        pipeScopes.forEach(pipeScope -> {
+            Scope type = pipeScope.getStructure().values().stream()
+                    .filter(s -> s.getValue() instanceof MicroPipe)
+                    .findFirst()
+                    .orElse(null);
+            List<Scope> inputScopes = getPipeInputScopes(pipeScope);
+            if (type != null && type.getValue() != null) {
+                MicroPipe mp = (MicroPipe) type.getValue();
+                mp.getInputMapping().getParameters().forEach(parameter -> {
+                    ValueDependency dependency = inputScopes.stream()
+                            .flatMap(s -> s.getDependencies().stream())
+                            .filter(d -> d.getResolvedTargetValue().equals(parameter))
+                            .findFirst()
+                            .orElse(null);
+                    if (dependency == null && !parameter.isOptional()) {
+                        throw new IllegalArgumentException(
+                                String.format("Pipe stage %s is referencing micro pipe %s, " +
+                                                "but is not providing the mandatory parameter %s.",
+                                        ((FlowPipe) pipeScope.getValue()).getAs(),
+                                        mp.getName(),
+                                        parameter.getName()));
+                    }
+                });
+            }
+        });
+    }
+
+    private List<Scope> getPipeInputScopes(Scope pipeScope) {
+        Scope pipeInputScope = pipeScope.subScope(Arrays.asList(FlowPipe.INPUT_SCOPE_PATH));
+        return pipeInputScope == null
+                ? new ArrayList<>()
+                : pipeInputScope.getStructure().values().stream()
+                    .filter(s -> s.getValue() instanceof PipeInput)
+                    .collect(Collectors.toList());
     }
 
     private void verifyDependencies(Scope fullScope) {
@@ -130,7 +210,9 @@ public class ScopeFactory {
 
     private ScopeContext processFieldLevelAnnotations(Object annotatedInstance, ScopeContext mainContext) {
         AtomicReference<ScopeContext> cumulativeContext = new AtomicReference<>(mainContext);
-        Stream.of(annotatedInstance.getClass().getDeclaredFields()).forEach(field -> {
+        Stream.of(annotatedInstance.getClass().getDeclaredFields())
+                .filter(f -> !Modifier.isStatic(f.getModifiers()))
+                .forEach(field -> {
             Object fieldValue = ReflectionUtils.getFieldValue(annotatedInstance, field);
             List<Annotation> markers = ReflectionUtils.getMarkerAnnotations(field);
 

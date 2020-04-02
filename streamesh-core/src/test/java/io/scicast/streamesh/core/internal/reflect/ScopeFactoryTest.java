@@ -98,9 +98,7 @@ public class ScopeFactoryTest {
 
         Scope scope = factory.create(definition);
         FlowGraph graph = new FlowGraphBuilder().build(scope);
-
-        graph.getNodes().stream()
-                .forEach(System.out::println);
+        System.out.println(graph.toDot());
 
 
 //        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT)

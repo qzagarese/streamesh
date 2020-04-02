@@ -20,7 +20,6 @@ public class LocallyScopedHandler implements GrammarMarkerHandler<LocallyScoped>
     @Override
     public HandlerResult handle(ScopeContext scopeContext, StreameshContext context) {
         this.context = context;
-        ReflectionUtils.logState(scopeContext);
         LocallyScoped annotation = (LocallyScoped) scopeContext.getAnnotation();
 
         List<String> path = scopeContext.getParentPath().stream().collect(Collectors.toList());

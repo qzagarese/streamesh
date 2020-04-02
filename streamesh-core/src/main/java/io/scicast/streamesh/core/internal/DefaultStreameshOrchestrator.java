@@ -6,8 +6,12 @@ import io.scicast.streamesh.core.exception.InvalidCmdParameterException;
 import io.scicast.streamesh.core.exception.MissingParameterException;
 import io.scicast.streamesh.core.exception.NotFoundException;
 import io.scicast.streamesh.core.flow.FlowDefinition;
+import io.scicast.streamesh.core.flow.FlowGraph;
+import io.scicast.streamesh.core.flow.FlowGraphBuilder;
+import io.scicast.streamesh.core.flow.FlowPipe;
 import io.scicast.streamesh.core.internal.reflect.Scope;
 import io.scicast.streamesh.core.internal.reflect.ScopeFactory;
+import io.scicast.streamesh.core.internal.reflect.ValueDependency;
 
 import java.io.InputStream;
 import java.util.*;
@@ -62,11 +66,14 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     private String applyFlowDefinition(FlowDefinition definition) {
         String definitionId = UUID.randomUUID().toString();
         Scope scope = scopeFactory.create(definition);
+        FlowGraph graph = new FlowGraphBuilder().build(scope);
 
-
-        streameshStore.storeDefinition(definition.withId(definitionId));
+        streameshStore.storeDefinition(definition.withId(definitionId)
+            .withGraph(graph));
         return definitionId;
     }
+
+
 
     private String applyMicropipe(MicroPipe micropipe) {
         String imageId = driver.retrieveContainerImage(micropipe.getImage());

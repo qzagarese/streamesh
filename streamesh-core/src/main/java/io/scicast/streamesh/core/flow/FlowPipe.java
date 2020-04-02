@@ -1,7 +1,6 @@
 package io.scicast.streamesh.core.flow;
 
 import io.scicast.streamesh.core.internal.reflect.FlowScoped;
-import io.scicast.streamesh.core.internal.reflect.InScope;
 import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
 import io.scicast.streamesh.core.internal.reflect.handler.DefinitionRefProvider;
 import lombok.AllArgsConstructor;
@@ -18,12 +17,13 @@ import java.util.List;
 @FlowScoped(using = "as")
 public class FlowPipe {
 
+    public static final String INPUT_SCOPE_PATH = "input";
     private String as;
 
     @LocallyScoped(as = "type", factory = DefinitionRefProvider.class)
     private String type;
 
-    @LocallyScoped(as = "input")
+    @LocallyScoped(as = INPUT_SCOPE_PATH)
     private List<PipeInput> input;
 
     @LocallyScoped(as = "output")

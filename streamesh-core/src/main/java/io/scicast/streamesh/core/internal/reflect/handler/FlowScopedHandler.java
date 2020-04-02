@@ -3,7 +3,6 @@ package io.scicast.streamesh.core.internal.reflect.handler;
 import io.scicast.streamesh.core.StreameshContext;
 import io.scicast.streamesh.core.internal.reflect.*;
 
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
@@ -15,8 +14,6 @@ public class FlowScopedHandler implements GrammarMarkerHandler<FlowScoped> {
 
     @Override
     public HandlerResult handle(ScopeContext scopeContext, StreameshContext streameshContext) {
-        ReflectionUtils.logState(scopeContext);
-
         FlowScoped annotation = (FlowScoped) scopeContext.getAnnotation();
         String pathValue;
         if (annotation.randomName()) {

@@ -10,7 +10,7 @@ pipes:
   - type: airbnb-ny-properties
     as: sub-flow
     output:
-      - target: ${report}
+      - target: ${all-properties}
         as: plot
 
   - type: simple-db-reader
