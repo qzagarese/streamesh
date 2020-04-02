@@ -23,7 +23,7 @@ public class FlowPipe {
     @LocallyScoped(as = "type", factory = DefinitionRefProvider.class)
     private String type;
 
-    @InScope
+    @LocallyScoped(as = "input")
     private List<PipeInput> input;
 
     @LocallyScoped(as = "output")

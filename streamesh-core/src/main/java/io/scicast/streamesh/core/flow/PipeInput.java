@@ -15,7 +15,7 @@ import lombok.*;
 @GraphNode(GraphNode.NodeType.INTERNAL)
 public class PipeInput {
 
-    @Resolvable(scope = "parent.type.input",
+    @Resolvable(scope = "parent.parent.type.input",
             expectsAnyOf = { TaskParameter.class, FlowParameterRef.class },
             dataFlow = Resolvable.DataFlowDirection.OUTGOING)
     private String target;

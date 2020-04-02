@@ -2,8 +2,10 @@ type: flow
 name: airbnb-ny-properties
 
 output:
-  - name: report
-    target: ${plotter.output.plot}
+  - name: brooklyn-and-manhattan
+    target: ${b-and-m-plotter.output.brooklyn-and-manhattan}
+  - name: all-properties
+    target: ${all-in-one-plotter.output.full-plot}
 
 
 pipes:
@@ -36,12 +38,30 @@ pipes:
         as: other-properties
 
   - type: http-data-merger
-    as: merger
+    as: b-and-m-merger
     input:
       - target: ${urls}
         value: ${db-reader.output.brooklyn-properties}
       - target: ${urls}
         value: ${s3-manhattan.output.manhattan-properties}
+    output:
+      - target: ${output}
+        as: brooklyn-and-manhattan
+
+  - type: python-plotter
+    as: b-and-m-plotter
+    input:
+      - target: ${dataset}
+        value: ${b-and-m-merger.output.brooklyn-and-manhattan}
+    output:
+      - target: ${plot}
+        as: brooklyn-and-manhattan
+
+  - type: http-data-merger
+    as: all-props-merger
+    input:
+      - target: ${urls}
+        value: ${b-and-m-merger.output.brooklyn-and-manhattan}
       - target: ${urls}
         value: ${s3-others.output.other-properties}
     output:
@@ -49,11 +69,12 @@ pipes:
         as: all-properties
 
   - type: python-plotter
-    as: plotter
+    as: all-in-one-plotter
     input:
       - target: ${dataset}
-        value: ${merger.output.all-properties}
+        value: ${all-props-merger.output.all-properties}
     output:
       - target: ${plot}
-        as: plot
+        as: full-plot
+
 

@@ -86,7 +86,15 @@ public class FlowGraph {
             FlowNode node = nameToNode.get(entry.getValue());
             node.getOutgoingLinks().forEach(edge -> {
                 buf.append("\t" + nameToVar.get(node.getName()) + " -> "
-                        + nameToVar.get(edge.getDestination().getName()) + ";\n");
+                        + nameToVar.get(edge.getDestination().getName()));
+                if (!edge.getSourceLabel().isBlank() || !edge.getDestinationLabel().isBlank()) {
+                    buf.append("[label=\"");
+                    buf.append(edge.getSourceLabel());
+                    buf.append(edge.getSourceLabel().isBlank() || edge.getDestinationLabel().isBlank() ? "" : " - ");
+                    buf.append(edge.getDestinationLabel());
+                    buf.append("\"]");
+                }
+                buf.append(";\n");
             });
         });
         buf.append("}\n");
