@@ -1,9 +1,6 @@
 package io.scicast.streamesh.core.internal;
 
-import io.scicast.streamesh.core.Definition;
-import io.scicast.streamesh.core.MicroPipe;
-import io.scicast.streamesh.core.TaskDescriptor;
-import io.scicast.streamesh.core.StreameshStore;
+import io.scicast.streamesh.core.*;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,7 +12,11 @@ public class InMemoryStreameshStore implements StreameshStore {
 
     private Map<String, Definition> definitions = new HashMap<>();
     private Map<String, Definition> definitionsByName = new HashMap<>();
-    private Map<String, TaskDescriptor> jobs = new HashMap<String, TaskDescriptor>();
+
+    private Map<String, FlowInstance> flowInstances = new HashMap<>();
+    private Map<String, Set<FlowInstance>> flowDefinitionsToInstances = new HashMap<>();
+
+    private Map<String, TaskDescriptor> tasks = new HashMap<String, TaskDescriptor>();
     private Map<MicroPipe, Set<TaskDescriptor>> pipesToTasks = new HashMap<MicroPipe, Set<TaskDescriptor>>();
 
     public InMemoryStreameshStore() {
@@ -31,6 +32,27 @@ public class InMemoryStreameshStore implements StreameshStore {
         definitionsByName.put(definition.getName(), definition);
     }
 
+    @Override
+    public void storeFlowInstance(FlowInstance instance) {
+        flowInstances.put(instance.getId(), instance);
+        Set<FlowInstance> flowInstances = flowDefinitionsToInstances.get(instance.getDefinitionId());
+        if (flowInstances == null) {
+            flowInstances = new HashSet<>();
+        }
+        flowInstances.add(instance);
+        flowDefinitionsToInstances.put(instance.getDefinitionId(), flowInstances);
+    }
+
+    @Override
+    public Set<FlowInstance> getFlowInstancesByDefinition(String flowDefinitionId) {
+        return flowDefinitionsToInstances.get(flowDefinitionId);
+    }
+
+    @Override
+    public Set<TaskDescriptor> getTasksByFlowInstance(String flowInstanceId) {
+        return null;
+    }
+
 
     @Override
     public Definition getDefinitionById(String id) {
@@ -43,7 +65,7 @@ public class InMemoryStreameshStore implements StreameshStore {
     }
 
     @Override
-    public void remove(String id) {
+    public void removeDefinition(String id) {
         Definition removed = definitions.remove(id);
         if(removed != null) {
             definitionsByName.remove(removed.getName());
@@ -58,34 +80,34 @@ public class InMemoryStreameshStore implements StreameshStore {
     }
 
     @Override
-    public Set<TaskDescriptor> getAllJobs() {
-        return jobs.values().stream().collect(Collectors.toSet());
+    public Set<TaskDescriptor> getAllTasks() {
+        return tasks.values().stream().collect(Collectors.toSet());
     }
 
     @Override
-    public Set<TaskDescriptor> getJobsByDefinition(String definitionId) {
+    public Set<TaskDescriptor> getTasksByDefinition(String definitionId) {
         return pipesToTasks.get(getDefinitionById(definitionId));
     }
 
     @Override
-    public TaskDescriptor getJobById(String jobId) {
-        return jobs.get(jobId);
+    public TaskDescriptor getTaskById(String jobId) {
+        return tasks.get(jobId);
     }
 
     @Override
-    public void updateJob(String definitionId, TaskDescriptor descriptor) {
-        jobs.put(descriptor.getId(), descriptor);
+    public void updateTask(String definitionId, TaskDescriptor descriptor) {
+        tasks.put(descriptor.getId(), descriptor);
         Definition definition = getDefinitionById(definitionId);
         if (!(definition instanceof MicroPipe)) {
-            throw new IllegalArgumentException("Cannot associate job to definition of type " + definition.getType());
+            throw new IllegalArgumentException("Cannot associate a task to a definition of type " + definition.getType());
         }
-        Set<TaskDescriptor> jobDescriptors = pipesToTasks.get(definition);
-        if (jobDescriptors == null) {
-            jobDescriptors = new HashSet<>();
+        Set<TaskDescriptor> taskDescriptors = pipesToTasks.get(definition);
+        if (taskDescriptors == null) {
+            taskDescriptors = new HashSet<>();
         } else {
-            jobDescriptors.remove(descriptor);
-            jobDescriptors.add(descriptor);
+            taskDescriptors.remove(descriptor);
+            taskDescriptors.add(descriptor);
         }
-        pipesToTasks.put((MicroPipe) definition, jobDescriptors);
+        pipesToTasks.put((MicroPipe) definition, taskDescriptors);
     }
 }

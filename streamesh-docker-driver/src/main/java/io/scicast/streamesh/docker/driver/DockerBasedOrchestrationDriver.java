@@ -2,15 +2,19 @@ package io.scicast.streamesh.docker.driver;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.command.*;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.ListImagesCmd;
+import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.model.*;
-import io.scicast.streamesh.core.TaskDescriptor;
 import io.scicast.streamesh.core.OrchestrationDriver;
+import io.scicast.streamesh.core.TaskDescriptor;
+import io.scicast.streamesh.core.TaskExecutionEvent;
 import io.scicast.streamesh.core.TaskOutput;
 import io.scicast.streamesh.core.exception.NotFoundException;
-import io.scicast.streamesh.docker.driver.internal.JobRunner;
 import io.scicast.streamesh.docker.driver.internal.DockerClientProviderFactory;
 import io.scicast.streamesh.docker.driver.internal.DockerPullStatusManager;
+import io.scicast.streamesh.docker.driver.internal.TaskRunner;
 
 import java.io.Closeable;
 import java.io.File;
@@ -23,7 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-public class OrchestrationDockerDriver implements OrchestrationDriver {
+public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
 
     public static final String TMP_DIR_PROPERTY = "java.io.tmpdir";
     public static final String STREAMESH_DIR = "streamesh";
@@ -31,7 +35,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
     private Logger logger = Logger.getLogger(getClass().getName());
     private DockerClient client = DockerClientProviderFactory.create().getClient();
 
-    private Map<String, List<JobOutputManager>> outputManagers = new HashMap<>();
+    private Map<String, List<TaskOutputManager>> outputManagers = new HashMap<>();
     private String streameshServerAddress;
 
     public String retrieveContainerImage(String imageName) {
@@ -60,21 +64,22 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
         return respFut.join();
     }
 
-    public TaskDescriptor scheduleTask(String image, String command, List<TaskOutput> outputMapping, Consumer<TaskDescriptor> onStatusUpdate) {
+    public TaskDescriptor scheduleTask(String image, String command, List<TaskOutput> outputMapping,
+                                       Consumer<TaskExecutionEvent<?>> onStatusUpdate) {
         TaskDescriptor descriptor = TaskDescriptor.builder()
                 .id(UUID.randomUUID().toString())
                 .build();
         String parentOutputDirectory = createOutputDirectory(descriptor.getId(),
                 System.getProperty(TMP_DIR_PROPERTY) + File.separator +STREAMESH_DIR);
 
-        List<JobOutputManager> managersList = new ArrayList<>();
+        List<TaskOutputManager> managersList = new ArrayList<>();
 
         AtomicReference<CreateContainerCmd> create = new AtomicReference<>(client.createContainerCmd(image));
         create.set(create.get().withCmd(command.split(" ")));
         outputMapping.forEach(om -> {
             String outputDirectory = createOutputDirectory(om.getName(), parentOutputDirectory);
             create.set(setupOutputVolume(create.get(), outputDirectory, om.getOutputDir()));
-            JobOutputManager manager = new JobOutputManager(om.getName(), outputDirectory + File.separator + om.getFileNamePattern());
+            TaskOutputManager manager = new TaskOutputManager(om.getName(), outputDirectory + File.separator + om.getFileNamePattern());
             managersList.add(manager);
         });
         create.set(setupServerIpMapping(create.get(), streameshServerAddress));
@@ -84,8 +89,14 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
 
         outputManagers.put(descriptor.getId(), managersList);
 
-        JobRunner runner = new JobRunner(client, descriptor, jd -> {
-            onStatusUpdate.accept(this.handleUpdate(jd));
+        TaskRunner runner = new TaskRunner(client, descriptor, event -> {
+            if (event.getType().equals(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)) {
+                event = TaskExecutionEvent.builder()
+                        .type(event.getType())
+                        .descriptor(handleUpdate((TaskDescriptor) event.getDescriptor()))
+                        .build();
+            }
+            onStatusUpdate.accept(event);
         });
         return runner.init();
     }
@@ -104,7 +115,7 @@ public class OrchestrationDockerDriver implements OrchestrationDriver {
     private TaskDescriptor handleUpdate(TaskDescriptor descriptor) {
         if (descriptor.getStatus().equals(TaskDescriptor.JobStatus.COMPLETE)) {
             descriptor = descriptor.withExited(LocalDateTime.now());
-            List<JobOutputManager> managers = outputManagers.get(descriptor.getId());
+            List<TaskOutputManager> managers = outputManagers.get(descriptor.getId());
             managers.forEach(m -> m.notifyTermination());
         }
         return descriptor;

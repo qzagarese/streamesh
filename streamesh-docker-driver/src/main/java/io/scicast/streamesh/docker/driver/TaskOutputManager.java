@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JobOutputManager {
+public class TaskOutputManager {
 
     @Getter
     private final String outputFilePath;
@@ -17,7 +17,7 @@ public class JobOutputManager {
     private final String outputName;
     private boolean jobTerminated = false;
 
-    public JobOutputManager(String outputName, String outputFilePath) {
+    public TaskOutputManager(String outputName, String outputFilePath) {
         this.outputName = outputName;
         this.outputFilePath = outputFilePath;
     }

@@ -6,19 +6,25 @@ public interface StreameshStore {
 
     void storeDefinition(Definition definition);
 
+    void storeFlowInstance(FlowInstance instance);
+
+    Set<FlowInstance> getFlowInstancesByDefinition(String flowDefinitionId);
+
+    Set<TaskDescriptor> getTasksByFlowInstance(String flowInstanceId);
+
     Definition getDefinitionById(String id);
 
     Definition getDefinitionByName(String name);
 
-    void remove(String id);
+    void removeDefinition(String id);
 
     Set<Definition> getAllDefinitions();
 
-    Set<TaskDescriptor> getAllJobs();
+    Set<TaskDescriptor> getAllTasks();
 
-    Set<TaskDescriptor> getJobsByDefinition(String definitionId);
+    Set<TaskDescriptor> getTasksByDefinition(String definitionId);
 
-    TaskDescriptor getJobById(String jobId);
+    TaskDescriptor getTaskById(String jobId);
 
-    void updateJob(String definitionId, TaskDescriptor descriptor);
+    void updateTask(String definitionId, TaskDescriptor descriptor);
 }

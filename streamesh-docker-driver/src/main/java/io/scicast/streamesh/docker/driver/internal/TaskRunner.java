@@ -4,6 +4,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.model.Container;
 import io.scicast.streamesh.core.TaskDescriptor;
+import io.scicast.streamesh.core.TaskExecutionEvent;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -17,17 +18,17 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-public class JobRunner {
+public class TaskRunner {
 
 
     private static final String CONTAINER_NOT_FOUND_MSG = "Could not locate container with id %s for job %s";
     private DockerClient client;
     private TaskDescriptor descriptor;
-    Consumer<TaskDescriptor> onStatusUpdate;
+    Consumer<TaskExecutionEvent<?>> onStatusUpdate;
 
     private Logger logger = Logger.getLogger(getClass().getName());
 
-    public JobRunner(DockerClient client, TaskDescriptor descriptor, Consumer<TaskDescriptor> onStatusUpdate) {
+    public TaskRunner(DockerClient client, TaskDescriptor descriptor, Consumer<TaskExecutionEvent<?>> onStatusUpdate) {
         this.client = client;
         this.descriptor = descriptor;
         this.onStatusUpdate = onStatusUpdate;
@@ -39,7 +40,10 @@ public class JobRunner {
             descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.FAILED)
                     .withErrorMessage(
                             String.format(CONTAINER_NOT_FOUND_MSG, descriptor.getContainerId(), descriptor.getId()));
-            onStatusUpdate.accept(descriptor);
+            onStatusUpdate.accept(TaskExecutionEvent.builder()
+                    .type(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)
+                    .descriptor(descriptor)
+                    .build());
             return descriptor;
         }
 
@@ -53,11 +57,17 @@ public class JobRunner {
                 start.exec();
                 descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.RUNNING);
                 descriptor = descriptor.withStarted(LocalDateTime.now());
-                onStatusUpdate.accept(descriptor);
+                onStatusUpdate.accept(TaskExecutionEvent.builder()
+                    .type(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)
+                    .descriptor(descriptor)
+                    .build());
             } catch (Exception e) {
                descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.FAILED)
-                       .withErrorMessage(e.getMessage());
-               onStatusUpdate.accept(descriptor);
+                    .withErrorMessage(e.getMessage());
+               onStatusUpdate.accept(TaskExecutionEvent.builder()
+                    .type(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)
+                    .descriptor(descriptor)
+                    .build());
             }
         });
         try {
@@ -83,9 +93,9 @@ public class JobRunner {
 
     class StartObserver {
 
-        private Consumer<TaskDescriptor> onContainerStateChange;
+        private Consumer<TaskExecutionEvent<?>> onContainerStateChange;
 
-        StartObserver(Consumer<TaskDescriptor> onContainerStateChange) {
+        StartObserver(Consumer<TaskExecutionEvent<?>> onContainerStateChange) {
             this.onContainerStateChange = onContainerStateChange;
             track();
         }
@@ -99,7 +109,10 @@ public class JobRunner {
                         if (state.equalsIgnoreCase("running") || state.equalsIgnoreCase("exited")) {
                             logger.finest("Container " + descriptor.getContainerId() + " is in state " + state);
                             descriptor = descriptor.withStatus(state.equalsIgnoreCase("running") ? TaskDescriptor.JobStatus.RUNNING : TaskDescriptor.JobStatus.COMPLETE);
-                            onContainerStateChange.accept(descriptor);
+                            onContainerStateChange.accept(TaskExecutionEvent.builder()
+                                .type(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)
+                                .descriptor(descriptor)
+                                .build());
                             if (descriptor.getStatus().equals(TaskDescriptor.JobStatus.COMPLETE)) {
                                 this.cancel();
                             }
