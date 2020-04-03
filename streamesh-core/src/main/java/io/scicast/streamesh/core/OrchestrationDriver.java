@@ -8,9 +8,8 @@ public interface OrchestrationDriver {
 
     String retrieveContainerImage(String image);
 
-    TaskDescriptor scheduleTask(String image, String command, List<TaskOutput> outputMapping, Consumer<TaskExecutionEvent<?>> onUpdate);
+    TaskDescriptor scheduleTask(TaskExecutionIntent intent, Consumer<TaskExecutionEvent<?>> onUpdate, StreameshContext context);
 
     InputStream getTaskOutput(String taskId, String outputName);
 
-    void setStreameshServerAddress(String ipAddress);
 }

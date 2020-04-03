@@ -40,12 +40,12 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
                     return impl;
                 })
                 .orElseThrow(() -> new RuntimeException("No orchestration driver. Booting sequence aborted."));
-        driver.setStreameshServerAddress(serverIpAddress);
 
         context = StreameshContext.builder()
                 .orchestrationDriver(driver)
                 .store(streameshStore)
                 .orchestrator(this)
+                .streameshServerAddress(serverIpAddress)
                 .build();
 
         scopeFactory = ScopeFactory.builder()
@@ -125,13 +125,17 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
             throw new IllegalArgumentException("Cannot schedule tasks for definitions of type " + definition.getType());
         }
         MicroPipe pipe = (MicroPipe) definition;
-        TaskDescriptor descriptor = driver.scheduleTask(pipe.getImage(),
-                buildCommand(pipe, input),
-                pipe.getOutputMapping(),
+        TaskDescriptor descriptor = driver.scheduleTask(
+                TaskExecutionIntent.builder()
+                    .image(pipe.getImage())
+                    .command(buildCommand(pipe, input))
+                    .taskOutputs(pipe.getOutputMapping())
+                    .build(),
                 event -> {
                     updateState(pipe, event);
                     eventHandler.accept(event);
-                })
+                },
+                context)
                 .withServiceName(definition.getName())
                 .withServiceId(definition.getId());
         updateIndexes(pipe, descriptor);

@@ -7,10 +7,7 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.ListImagesCmd;
 import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.model.*;
-import io.scicast.streamesh.core.OrchestrationDriver;
-import io.scicast.streamesh.core.TaskDescriptor;
-import io.scicast.streamesh.core.TaskExecutionEvent;
-import io.scicast.streamesh.core.TaskOutput;
+import io.scicast.streamesh.core.*;
 import io.scicast.streamesh.core.exception.NotFoundException;
 import io.scicast.streamesh.docker.driver.internal.DockerClientProviderFactory;
 import io.scicast.streamesh.docker.driver.internal.DockerPullStatusManager;
@@ -36,7 +33,6 @@ public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
     private DockerClient client = DockerClientProviderFactory.create().getClient();
 
     private Map<String, List<TaskOutputManager>> outputManagers = new HashMap<>();
-    private String streameshServerAddress;
 
     public String retrieveContainerImage(String imageName) {
         CompletableFuture<String> respFut = new CompletableFuture<>();
@@ -64,8 +60,9 @@ public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
         return respFut.join();
     }
 
-    public TaskDescriptor scheduleTask(String image, String command, List<TaskOutput> outputMapping,
-                                       Consumer<TaskExecutionEvent<?>> onStatusUpdate) {
+    public TaskDescriptor scheduleTask(TaskExecutionIntent intent,
+                                       Consumer<TaskExecutionEvent<?>> onStatusUpdate,
+                                       StreameshContext context) {
         TaskDescriptor descriptor = TaskDescriptor.builder()
                 .id(UUID.randomUUID().toString())
                 .build();
@@ -74,15 +71,15 @@ public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
 
         List<TaskOutputManager> managersList = new ArrayList<>();
 
-        AtomicReference<CreateContainerCmd> create = new AtomicReference<>(client.createContainerCmd(image));
-        create.set(create.get().withCmd(command.split(" ")));
-        outputMapping.forEach(om -> {
+        AtomicReference<CreateContainerCmd> create = new AtomicReference<>(client.createContainerCmd(intent.getImage()));
+        create.set(create.get().withCmd(intent.getCommand().split(" ")));
+        intent.getTaskOutputs().forEach(om -> {
             String outputDirectory = createOutputDirectory(om.getName(), parentOutputDirectory);
             create.set(setupOutputVolume(create.get(), outputDirectory, om.getOutputDir()));
             TaskOutputManager manager = new TaskOutputManager(om.getName(), outputDirectory + File.separator + om.getFileNamePattern());
             managersList.add(manager);
         });
-        create.set(setupServerIpMapping(create.get(), streameshServerAddress));
+        create.set(setupServerIpMapping(create.get(), context.getStreameshServerAddress()));
 
         CreateContainerResponse createContainerResponse = create.get().exec();
         descriptor = descriptor.withContainerId(createContainerResponse.getId());
@@ -152,10 +149,6 @@ public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
                 .orElseThrow(() -> new NotFoundException(
                         String.format("No output named %s for taskId %s available.", outputName, taskId)))
                 .requestStream();
-    }
-
-    public void setStreameshServerAddress(String ipAddress) {
-        this.streameshServerAddress = ipAddress;
     }
 
     private String computeImageName(String cmdImageName) {
