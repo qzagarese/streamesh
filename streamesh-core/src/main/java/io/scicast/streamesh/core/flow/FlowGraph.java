@@ -9,7 +9,7 @@ import lombok.ToString;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FlowGraph {
+public class FlowGraph implements Cloneable {
 
     @Getter
     private Set<FlowNode> nodes = new HashSet<>();
@@ -101,12 +101,26 @@ public class FlowGraph {
         return buf.toString();
     }
 
+    @Override
+    protected FlowGraph clone() {
+        FlowGraph clone = new FlowGraph();
+        nodes.forEach(node -> clone.nodes.add(node.clone()));
+        nodes.forEach(node -> {
+            node.getIncomingLinks().forEach(edge -> {
+                clone.connect(edge.source.getName(), edge.getDestination().getName(), edge.getSourceLabel(), edge.getDestinationLabel());
+            });
+            node.getOutgoingLinks().forEach(edge -> {
+                clone.connect(edge.source.getName(), edge.getDestination().getName(), edge.getSourceLabel(), edge.getDestinationLabel());
+            });
+        });
+        return clone;
+    }
 
     @Getter
     @Builder
     @EqualsAndHashCode(of = "name")
     @ToString(of = {"name", "value", "type"})
-    public static class FlowNode {
+    public static class FlowNode implements Cloneable {
 
         private String name;
         private Object value;
@@ -126,6 +140,15 @@ public class FlowGraph {
             outgoingLinks.add(edge);
         }
 
+        @Override
+        protected FlowNode clone() {
+            FlowNode clone = FlowNode.builder()
+                .name(name)
+                .type(type)
+                .value(value)
+                .build();
+            return clone;
+        }
     }
 
     @Getter

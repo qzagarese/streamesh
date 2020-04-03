@@ -14,6 +14,8 @@ public class FlowExecutor {
     private final StreameshContext context;
 
     public FlowInstance execute() {
+        FlowGraph graph = flow.getGraph().clone();
+        
         return null;
     }
 
