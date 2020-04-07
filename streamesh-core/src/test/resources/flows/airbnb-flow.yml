@@ -1,6 +1,13 @@
 type: flow
 name: airbnb-ny-properties
 
+input:
+  - name: manhattan-bucket
+  - name: manhattan-file
+  - name: others-bucket
+  - name: others-file
+
+
 output:
   - name: brooklyn-and-manhattan
     target: ${b-and-m-plotter.output.brooklyn-and-manhattan}
@@ -19,9 +26,11 @@ pipes:
     as: s3-manhattan
     input:
       - target: ${bucket}
-        value: ic-demo-streamesh
+        value: ${flow.input.manhattan-bucket}
+#        value: ic-demo-streamesh
       - target: ${filename}
-        value: data/AB_NYC_2019_Manhattan.csv
+        value: ${flow.input.manhattan-file}
+#        value: data/AB_NYC_2019_Manhattan.csv
     output:
       - target: ${output}
         as: manhattan-properties
@@ -30,9 +39,11 @@ pipes:
     as: s3-others
     input:
       - target: ${bucket}
-        value: ic-demo-streamesh
+        value: ${flow.input.others-bucket}
+#        value: ic-demo-streamesh
       - target: ${filename}
-        value: data/AB_NYC_2019_rest.csv
+        value: ${flow.input.others-file}
+#        value: data/AB_NYC_2019_rest.csv
     output:
       - target: ${output}
         as: other-properties

@@ -1,6 +1,5 @@
 package io.scicast.streamesh.core;
 
-import io.scicast.streamesh.core.internal.reflect.GraphNode;
 import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
 import lombok.*;
 

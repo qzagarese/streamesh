@@ -1,6 +1,7 @@
 package io.scicast.streamesh.core.internal;
 
 import io.scicast.streamesh.core.*;
+import io.scicast.streamesh.core.flow.FlowInstance;
 
 import java.util.HashMap;
 import java.util.HashSet;

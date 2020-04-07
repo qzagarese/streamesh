@@ -5,6 +5,7 @@ import io.scicast.streamesh.core.Definition;
 import io.scicast.streamesh.core.internal.reflect.FlowScoped;
 import io.scicast.streamesh.core.internal.reflect.InScope;
 import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
+import io.scicast.streamesh.core.internal.reflect.Scope;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -43,5 +44,8 @@ public class FlowDefinition implements Definition {
 
     @JsonIgnore
     private FlowGraph graph;
+
+    @JsonIgnore
+    private Scope scope;
 
 }

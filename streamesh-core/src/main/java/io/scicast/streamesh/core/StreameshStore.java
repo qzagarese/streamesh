@@ -1,5 +1,7 @@
 package io.scicast.streamesh.core;
 
+import io.scicast.streamesh.core.flow.FlowInstance;
+
 import java.util.Set;
 
 public interface StreameshStore {

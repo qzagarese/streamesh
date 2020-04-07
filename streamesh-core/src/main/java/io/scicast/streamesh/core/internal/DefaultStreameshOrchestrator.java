@@ -6,7 +6,9 @@ import io.scicast.streamesh.core.exception.InvalidCmdParameterException;
 import io.scicast.streamesh.core.exception.MissingParameterException;
 import io.scicast.streamesh.core.exception.NotFoundException;
 import io.scicast.streamesh.core.flow.FlowDefinition;
-import io.scicast.streamesh.core.flow.FlowExecutor;
+import io.scicast.streamesh.core.flow.FlowInstance;
+import io.scicast.streamesh.core.flow.execution.FlowExecutionEvent;
+import io.scicast.streamesh.core.flow.execution.LocalFlowExecutor;
 import io.scicast.streamesh.core.flow.FlowGraph;
 import io.scicast.streamesh.core.flow.FlowGraphBuilder;
 import io.scicast.streamesh.core.internal.reflect.Scope;
@@ -69,7 +71,8 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         FlowGraph graph = new FlowGraphBuilder().build(scope);
 
         streameshStore.storeDefinition(definition.withId(definitionId)
-            .withGraph(graph));
+            .withGraph(graph)
+            .withScope(scope));
         return definitionId;
     }
 
@@ -143,11 +146,15 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     public FlowInstance scheduleFlow(String definitionId, Map<?, ?> input) {
+        return scheduleFlow(definitionId, input, event -> {});
+    }
+
+    public FlowInstance scheduleFlow(String definitionId, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler) {
         Definition definition = getDefinition(definitionId);
         if (!(definition instanceof FlowDefinition)) {
             throw new IllegalArgumentException("Cannot schedule flows for definitions of type " + definition.getType());
         }
-        return new FlowExecutor((FlowDefinition) definition, context).execute();
+        return new LocalFlowExecutor(context).execute((FlowDefinition) definition, input, eventHandler);
     }
 
     public TaskDescriptor scheduleSecureTask(String definitionId, Map<?, ?> input, String publicKey) {

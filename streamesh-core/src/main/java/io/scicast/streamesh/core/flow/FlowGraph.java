@@ -102,7 +102,7 @@ public class FlowGraph implements Cloneable {
     }
 
     @Override
-    protected FlowGraph clone() {
+    public FlowGraph clone() {
         FlowGraph clone = new FlowGraph();
         nodes.forEach(node -> clone.nodes.add(node.clone()));
         nodes.forEach(node -> {
