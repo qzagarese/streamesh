@@ -14,5 +14,6 @@ public class TaskOutput {
     private String name;
     private String outputDir;
     private String fileNamePattern;
+    private boolean multipart = false;
 
 }

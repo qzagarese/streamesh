@@ -35,6 +35,7 @@ public class DefinitionRefProvider implements ScopedInstanceFactory<Object> {
                 .output(definition.getOutput().stream()
                     .map(output -> FlowOutputRef.builder()
                         .name(output.getName())
+                        .multipart(output.isMultipart())
                         .build())
                     .collect(Collectors.toList()))
                 .definition(definition)

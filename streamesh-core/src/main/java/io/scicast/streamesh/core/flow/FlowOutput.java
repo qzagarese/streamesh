@@ -21,4 +21,6 @@ public class FlowOutput {
         dataFlow = Resolvable.DataFlowDirection.INCOMING)
     private String target;
 
+    private boolean multipart = false;
+
 }

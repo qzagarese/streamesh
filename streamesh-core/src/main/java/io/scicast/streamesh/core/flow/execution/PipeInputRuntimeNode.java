@@ -32,16 +32,18 @@ public class PipeInputRuntimeNode extends RuntimeNode {
 
     @Override
     public void notify(RuntimeNode node) {
-        if (canPropagate(node)) {
-            update(node.getValue());
+        this.value = node.getValue();
+        if (shouldPropagate(node)) {
+            notifyObservers();
         }
     }
 
-    private boolean canPropagate(RuntimeNode node) {
+    private boolean shouldPropagate(RuntimeNode node) {
         if (staticNodeValue.getUsable().equals(PipeInput.UsabilityState.WHILE_BEING_PRODUCED)) {
             return true;
         } else {
-            return node.getValue().getParts().stream().allMatch(p -> p.getState().equals(RuntimeDataValue.DataState.COMPLETE));
+            return node.getValue().getParts().stream()
+                    .allMatch(p -> p.getState().equals(RuntimeDataValue.DataState.COMPLETE));
         }
     }
 }

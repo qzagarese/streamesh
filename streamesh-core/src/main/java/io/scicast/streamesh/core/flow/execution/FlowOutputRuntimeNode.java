@@ -1,20 +1,12 @@
 package io.scicast.streamesh.core.flow.execution;
 
 import io.scicast.streamesh.core.flow.FlowGraph;
+import io.scicast.streamesh.core.flow.FlowOutputRef;
 
-public class FlowOutputRuntimeNode extends  RuntimeNode {
+public class FlowOutputRuntimeNode extends OutputRuntimeNode {
 
     public FlowOutputRuntimeNode(FlowGraph.FlowNode flowNode) {
-
-    }
-
-    @Override
-    public boolean canExecute() {
-        return false;
-    }
-
-    @Override
-    public void notify(RuntimeNode node) {
-
+        this.name = flowNode.getName();
+        this.outputName = ((FlowOutputRef) flowNode.getValue()).getName();
     }
 }
