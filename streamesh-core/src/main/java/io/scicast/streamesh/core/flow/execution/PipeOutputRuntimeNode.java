@@ -5,11 +5,7 @@ import io.scicast.streamesh.core.flow.FlowGraph;
 public class PipeOutputRuntimeNode extends RuntimeNode {
     public PipeOutputRuntimeNode(FlowGraph.FlowNode flowNode) {
         this.name = flowNode.getName();
-    }
-
-    @Override
-    public boolean canExecute() {
-        return false;
+        this.staticGraphNode = flowNode;
     }
 
     @Override

@@ -8,6 +8,7 @@ public class TaskOutputRuntimeNode extends OutputRuntimeNode {
     public TaskOutputRuntimeNode(FlowGraph.FlowNode flowNode) {
         this.name = flowNode.getName();
         this.outputName = ((TaskOutput) flowNode.getValue()).getName();
+        this.staticGraphNode = flowNode;
     }
 
 }

@@ -13,15 +13,12 @@ public class TaskParameterRuntimeNode extends RuntimeNode {
 
     public TaskParameterRuntimeNode(FlowGraph.FlowNode flowNode) {
         this.name = flowNode.getName();
+        this.staticGraphNode = flowNode;
         expectedNotificationsSubjects = flowNode.getIncomingLinks().stream()
                 .map(edge -> edge.getSource().getName())
                 .collect(Collectors.toSet());
         value = RuntimeDataValue.builder().build();
-    }
-
-    @Override
-    public boolean canExecute() {
-        return false;
+        this.staticGraphNode = flowNode;
     }
 
     @Override

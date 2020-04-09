@@ -9,12 +9,8 @@ public class FlowParameterRuntimeNode extends UpdatableRuntimeNode {
 
     public FlowParameterRuntimeNode(FlowGraph.FlowNode flowNode) {
         this.name = flowNode.getName();
+        this.staticGraphNode = flowNode;
         this.staticNodeValue = (FlowParameter) flowNode.getValue();
-    }
-
-    @Override
-    public boolean canExecute() {
-        return false;
     }
 
     @Override
@@ -25,6 +21,7 @@ public class FlowParameterRuntimeNode extends UpdatableRuntimeNode {
     @Override
     public void update(RuntimeDataValue value) {
         if (!value.equals(this.value)) {
+            this.value = value;
             notifyObservers();
         }
     }

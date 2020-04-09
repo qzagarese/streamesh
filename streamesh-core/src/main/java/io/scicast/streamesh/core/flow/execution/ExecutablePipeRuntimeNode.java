@@ -10,17 +10,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ExecutablePipeRuntimeNode extends UpdatableRuntimeNode {
+public abstract class ExecutablePipeRuntimeNode extends UpdatableRuntimeNode {
+
     @Getter
     protected Map<String, Object> pipeInput = new HashMap<>();
+
     @Getter
     protected String definitionId;
+
     protected Set<String> expectedNotificationsSubjects;
     protected Map<String, String> upstreamNodeToParameterSpec = new HashMap<>();
 
 
     public ExecutablePipeRuntimeNode(FlowGraph.FlowNode flowNode) {
         this.name = flowNode.getName();
+        this.staticGraphNode = flowNode;
         definitionId = ((MicroPipe) flowNode.getValue()).getId();
         expectedNotificationsSubjects = flowNode.getIncomingLinks().stream()
                 .map(flowEdge -> flowEdge.getSource())
@@ -28,8 +32,6 @@ public class ExecutablePipeRuntimeNode extends UpdatableRuntimeNode {
                 .collect(Collectors.toSet());
     }
 
-
-    @Override
     public boolean canExecute() {
         return expectedNotificationsSubjects.isEmpty();
     }

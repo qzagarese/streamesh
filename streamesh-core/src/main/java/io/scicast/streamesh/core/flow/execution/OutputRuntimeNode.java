@@ -4,13 +4,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public abstract class OutputRuntimeNode extends RuntimeNode {
+
     protected String outputName;
-
-
-    @Override
-    public boolean canExecute() {
-        return false;
-    }
 
     @Override
     public void notify(RuntimeNode node) {

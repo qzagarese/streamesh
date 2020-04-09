@@ -1,24 +1,27 @@
 package io.scicast.streamesh.core.internal.reflect;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.scicast.streamesh.core.MicroPipe;
 import io.scicast.streamesh.core.StreameshContext;
 import io.scicast.streamesh.core.StreameshStore;
+import io.scicast.streamesh.core.exception.InvalidCmdParameterException;
+import io.scicast.streamesh.core.exception.MissingParameterException;
 import io.scicast.streamesh.core.flow.FlowDefinition;
 import io.scicast.streamesh.core.flow.FlowGraph;
 import io.scicast.streamesh.core.flow.FlowGraphBuilder;
+import io.scicast.streamesh.core.flow.FlowParameter;
+import io.scicast.streamesh.core.flow.execution.ExecutablePipeRuntimeNode;
+import io.scicast.streamesh.core.flow.execution.ExecutionGraph;
+import io.scicast.streamesh.core.flow.execution.FlowParameterRuntimeNode;
+import io.scicast.streamesh.core.flow.execution.RuntimeDataValue;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -72,6 +75,32 @@ public class ScopeFactoryTest {
                 .build();
         Scope scope = factory.create(definition);
         FlowGraph graph = new FlowGraphBuilder().build(scope);
+
+        ExecutionGraph executionGraph = new ExecutionGraph(graph);
+
+        Set<ExecutablePipeRuntimeNode> executableNodes = executionGraph.getExecutableNodes();
+
+
+        Map<String, Object> input = new HashMap<>();
+        input.put("manhattan-bucket", "ic-demo-streamesh");
+        input.put("manhattan-file", "data/AB_NYC_2019_Manhattan.csv");
+        input.put("others-bucket", "ic-demo-streamesh");
+        input.put("others-file", "data/AB_NYC_2019_rest.csv");
+
+        executionGraph.getPipeInputNodes().forEach(node -> {
+            if (node.isStaticallyInitialised()) {
+                node.notifyObservers();
+            }
+        });
+
+        Set<FlowParameterRuntimeNode> inputNodes = executionGraph.getInputNodes();
+        inputNodes.forEach(node -> {
+            FlowParameter parameterSpec = (FlowParameter) node.getStaticGraphNode().getValue();
+            Object o = input.get(parameterSpec.getName());
+            node.update(buildRuntimeDataValue(parameterSpec, o));
+        });
+
+        executableNodes = executionGraph.getExecutableNodes();
 
         System.out.println(graph.toDot());
 
@@ -128,6 +157,36 @@ public class ScopeFactoryTest {
 
     private static <T> T loadDefinition(String resource, Class<T> clazz) throws IOException {
         return mapper.reader().forType(clazz).readValue(ScopeFactoryTest.class.getResource(resource));
+    }
+
+    private RuntimeDataValue buildRuntimeDataValue(FlowParameter parameterSpec, Object o) {
+        if (!parameterSpec.isOptional() && o == null) {
+            throw new MissingParameterException(String.format("Parameter %s is mandatory.", parameterSpec.getName()));
+        }
+        if (parameterSpec.isRepeatable() && (!List.class.isAssignableFrom(o.getClass()))) {
+            throw new InvalidCmdParameterException(String.format("Parameter %s must be provided as an array", parameterSpec.getName()));
+        }
+
+        RuntimeDataValue.RuntimeDataValueBuilder builder = RuntimeDataValue.builder();
+        Set<RuntimeDataValue.RuntimeDataValuePart> parts;
+        if (!parameterSpec.isRepeatable()) {
+            parts = Stream.of(RuntimeDataValue.RuntimeDataValuePart.builder()
+                    .state(RuntimeDataValue.DataState.COMPLETE)
+                    .refName(parameterSpec.getName())
+                    .value((String) o)
+                    .build())
+                    .collect(Collectors.toSet());
+        } else {
+            parts = ((List<String>) o).stream()
+                    .map(s -> RuntimeDataValue.RuntimeDataValuePart.builder()
+                            .value(s)
+                            .refName(parameterSpec.getName())
+                            .state(RuntimeDataValue.DataState.COMPLETE)
+                            .build())
+                    .collect(Collectors.toSet());
+        }
+        return builder.parts(parts)
+                .build();
     }
 
 }

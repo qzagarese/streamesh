@@ -1,13 +1,9 @@
 package io.scicast.streamesh.core.flow.execution;
 
-import io.scicast.streamesh.core.MicroPipe;
 import io.scicast.streamesh.core.TaskParameter;
 import io.scicast.streamesh.core.flow.FlowGraph;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class MicroPipeRuntimeNode extends ExecutablePipeRuntimeNode {
 

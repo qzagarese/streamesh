@@ -1,8 +1,12 @@
 package io.scicast.streamesh.core;
 
+import io.scicast.streamesh.core.flow.FlowInstance;
+import io.scicast.streamesh.core.flow.execution.FlowExecutionEvent;
+
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public interface StreameshOrchestrator {
 
@@ -21,6 +25,12 @@ public interface StreameshOrchestrator {
     Set<TaskDescriptor> getTasksByDefinition(String definitionId);
 
     TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input);
+
+    TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input, Consumer<TaskExecutionEvent<?>> eventHandler);
+
+    FlowInstance scheduleFlow(String definitionId, Map<?, ?> input);
+
+    FlowInstance scheduleFlow(String definitionId, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler);
 
     TaskDescriptor scheduleSecureTask(String definitionId, Map<?, ?> input, String publicKey);
 

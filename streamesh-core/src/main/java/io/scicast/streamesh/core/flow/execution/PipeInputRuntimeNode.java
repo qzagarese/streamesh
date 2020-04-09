@@ -3,6 +3,7 @@ package io.scicast.streamesh.core.flow.execution;
 import io.scicast.streamesh.core.flow.FlowGraph;
 import io.scicast.streamesh.core.flow.PipeInput;
 import io.scicast.streamesh.core.internal.reflect.ExpressionParser;
+import lombok.Getter;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -11,9 +12,13 @@ public class PipeInputRuntimeNode extends RuntimeNode {
 
     private PipeInput staticNodeValue;
 
+    @Getter
+    private boolean staticallyInitialised;
+
     public PipeInputRuntimeNode(FlowGraph.FlowNode flowNode) {
         this.name = flowNode.getName();
         this.staticNodeValue = (PipeInput) flowNode.getValue();
+        this.staticGraphNode = flowNode;
         if (!ExpressionParser.isExpression(staticNodeValue.getValue())) {
             value = RuntimeDataValue.builder()
                     .parts(Stream.of(RuntimeDataValue.RuntimeDataValuePart.builder()
@@ -22,12 +27,8 @@ public class PipeInputRuntimeNode extends RuntimeNode {
                             .build())
                         .collect(Collectors.toSet()))
                     .build();
+            staticallyInitialised = true;
         }
-    }
-
-    @Override
-    public boolean canExecute() {
-        return false;
     }
 
     @Override
@@ -42,7 +43,7 @@ public class PipeInputRuntimeNode extends RuntimeNode {
         if (staticNodeValue.getUsable().equals(PipeInput.UsabilityState.WHILE_BEING_PRODUCED)) {
             return true;
         } else {
-            return node.getValue().getParts().stream()
+            return node.getValue() != null && node.getValue().getParts().stream()
                     .allMatch(p -> p.getState().equals(RuntimeDataValue.DataState.COMPLETE));
         }
     }
