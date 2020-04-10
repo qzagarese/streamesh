@@ -37,7 +37,7 @@ public class TaskRunner {
     public TaskDescriptor init() {
         Optional<Container> c = findContainer();
         if (c.isEmpty()) {
-            descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.FAILED)
+            descriptor = descriptor.withStatus(TaskDescriptor.TaskStatus.FAILED)
                     .withErrorMessage(
                             String.format(CONTAINER_NOT_FOUND_MSG, descriptor.getContainerId(), descriptor.getId()));
             onStatusUpdate.accept(TaskExecutionEvent.builder()
@@ -55,14 +55,14 @@ public class TaskRunner {
             });
             try {
                 start.exec();
-                descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.RUNNING);
+                descriptor = descriptor.withStatus(TaskDescriptor.TaskStatus.RUNNING);
                 descriptor = descriptor.withStarted(LocalDateTime.now());
                 onStatusUpdate.accept(TaskExecutionEvent.builder()
                     .type(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)
                     .descriptor(descriptor)
                     .build());
             } catch (Exception e) {
-               descriptor = descriptor.withStatus(TaskDescriptor.JobStatus.FAILED)
+               descriptor = descriptor.withStatus(TaskDescriptor.TaskStatus.FAILED)
                     .withErrorMessage(e.getMessage());
                onStatusUpdate.accept(TaskExecutionEvent.builder()
                     .type(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)
@@ -108,12 +108,12 @@ public class TaskRunner {
                         String state = container.get().getState();
                         if (state.equalsIgnoreCase("running") || state.equalsIgnoreCase("exited")) {
                             logger.finest("Container " + descriptor.getContainerId() + " is in state " + state);
-                            descriptor = descriptor.withStatus(state.equalsIgnoreCase("running") ? TaskDescriptor.JobStatus.RUNNING : TaskDescriptor.JobStatus.COMPLETE);
+                            descriptor = descriptor.withStatus(state.equalsIgnoreCase("running") ? TaskDescriptor.TaskStatus.RUNNING : TaskDescriptor.TaskStatus.COMPLETE);
                             onContainerStateChange.accept(TaskExecutionEvent.builder()
                                 .type(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)
                                 .descriptor(descriptor)
                                 .build());
-                            if (descriptor.getStatus().equals(TaskDescriptor.JobStatus.COMPLETE)) {
+                            if (descriptor.getStatus().equals(TaskDescriptor.TaskStatus.COMPLETE)) {
                                 this.cancel();
                             }
                         }

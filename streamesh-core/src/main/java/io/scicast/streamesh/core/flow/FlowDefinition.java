@@ -22,7 +22,7 @@ import java.util.List;
 @FlowScoped(as = "flow")
 public class FlowDefinition implements Definition {
 
-    private final String type = "flow";
+    private String type;
 
     @LocallyScoped(as = "name")
     private String name;

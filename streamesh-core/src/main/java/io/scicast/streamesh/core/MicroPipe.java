@@ -21,7 +21,7 @@ public class MicroPipe implements Definition {
 
     private String id;
     private String name;
-    private final String type = "micropipe";
+    private String type;
     private String image;
     private String imageId;
     private String description;

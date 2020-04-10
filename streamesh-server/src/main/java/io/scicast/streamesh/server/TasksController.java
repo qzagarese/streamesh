@@ -26,7 +26,7 @@ public class TasksController {
     private Logger logger = Logger.getLogger(getClass().getName());
 
     @PostMapping(value = "/definitions/{definitionId}/tasks", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<Map<?, ?>> postJob(@PathVariable("definitionId") String definitionId, @RequestBody Map<?, ?> taskInput) {
+    public ResponseEntity<Map<?, ?>> postTask(@PathVariable("definitionId") String definitionId, @RequestBody Map<?, ?> taskInput) {
         String publicKey = (String) taskInput.get(STREAMESH_PUBLIC_KEY);
         TaskDescriptor descriptor;
         if (publicKey == null) {

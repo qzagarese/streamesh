@@ -23,6 +23,7 @@ import java.util.stream.StreamSupport;
 
 public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
 
+    private static final String BASE_API_PATH = "/api/v1";
     private final StreameshStore streameshStore = new InMemoryStreameshStore();
     private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
     private final StreameshContext context;
@@ -47,7 +48,13 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
                 .orchestrationDriver(driver)
                 .store(streameshStore)
                 .orchestrator(this)
-                .streameshServerAddress(serverIpAddress)
+                .serverInfo(StreameshServerInfo.builder()
+                        .host("streamesh-server")
+                        .ipAddress(serverIpAddress)
+                        .port(8080)
+                        .baseApiPath(BASE_API_PATH)
+                        .protocol(StreameshServerInfo.WebProtocol.http)
+                        .build())
                 .build();
 
         scopeFactory = ScopeFactory.builder()

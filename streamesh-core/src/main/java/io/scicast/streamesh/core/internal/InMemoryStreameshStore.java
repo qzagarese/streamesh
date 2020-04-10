@@ -45,6 +45,11 @@ public class InMemoryStreameshStore implements StreameshStore {
     }
 
     @Override
+    public FlowInstance getFlowInstance(String instanceId) {
+        return flowInstances.get(instanceId);
+    }
+
+    @Override
     public Set<FlowInstance> getFlowInstancesByDefinition(String flowDefinitionId) {
         return flowDefinitionsToInstances.get(flowDefinitionId);
     }

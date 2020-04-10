@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class TaskDescriptor {
 
     private String id;
-    private JobStatus status;
+    private TaskStatus status;
     private String serviceName;
     private String serviceId;
     private String containerId;
@@ -22,7 +22,7 @@ public class TaskDescriptor {
     private LocalDateTime started;
     private LocalDateTime exited;
 
-    public enum JobStatus {
+    public enum TaskStatus {
         FAILED, RUNNING, COMPLETE
     }
 

@@ -79,7 +79,7 @@ public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
             TaskOutputManager manager = new TaskOutputManager(om.getName(), outputDirectory + File.separator + om.getFileNamePattern());
             managersList.add(manager);
         });
-        create.set(setupServerIpMapping(create.get(), context.getStreameshServerAddress()));
+        create.set(setupServerIpMapping(create.get(), context.getServerInfo()));
 
         CreateContainerResponse createContainerResponse = create.get().exec();
         descriptor = descriptor.withContainerId(createContainerResponse.getId());
@@ -98,19 +98,19 @@ public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
         return runner.init();
     }
 
-    private CreateContainerCmd setupServerIpMapping(CreateContainerCmd cmd, String streameshServerAddress) {
+    private CreateContainerCmd setupServerIpMapping(CreateContainerCmd cmd, StreameshServerInfo serverInfo) {
         List<String> extraHosts = Optional.ofNullable(cmd.getHostConfig().getExtraHosts())
                 .map(Arrays::asList)
                 .map(ArrayList::new)
                 .orElse(new ArrayList<>());
-        extraHosts.add(STREAMESH_SERVER_HOST_NAME + ":" + streameshServerAddress);
+        extraHosts.add(serverInfo.getHost() + ":" + serverInfo.getIpAddress());
         HostConfig hc = cmd.getHostConfig().withExtraHosts(extraHosts.toArray(new String[0]));
         return cmd.withHostConfig(hc);
 
     }
 
     private TaskDescriptor handleUpdate(TaskDescriptor descriptor) {
-        if (descriptor.getStatus().equals(TaskDescriptor.JobStatus.COMPLETE)) {
+        if (descriptor.getStatus().equals(TaskDescriptor.TaskStatus.COMPLETE)) {
             descriptor = descriptor.withExited(LocalDateTime.now());
             List<TaskOutputManager> managers = outputManagers.get(descriptor.getId());
             managers.forEach(m -> m.notifyTermination());

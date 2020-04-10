@@ -47,7 +47,7 @@ public class DeploymentController {
     }
 
     @GetMapping(value = "/definitions", produces = "application/json")
-    public ResponseEntity<Set<Definition>> getDefinitions(@RequestParam("type") String type) {
+    public ResponseEntity<Set<Definition>> getDefinitions(@RequestParam(value = "type", required = false) String type) {
 
         return ResponseEntity.ok(orchestrator.getDefinitions().stream()
             .map(definition -> {

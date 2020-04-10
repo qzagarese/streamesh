@@ -10,6 +10,8 @@ public interface StreameshStore {
 
     void storeFlowInstance(FlowInstance instance);
 
+    FlowInstance getFlowInstance(String instanceId);
+
     Set<FlowInstance> getFlowInstancesByDefinition(String flowDefinitionId);
 
     Set<TaskDescriptor> getTasksByFlowInstance(String flowInstanceId);
