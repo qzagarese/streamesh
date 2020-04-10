@@ -64,7 +64,7 @@ public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
                                        Consumer<TaskExecutionEvent<?>> onStatusUpdate,
                                        StreameshContext context) {
         TaskDescriptor descriptor = TaskDescriptor.builder()
-                .id(UUID.randomUUID().toString())
+                .id(intent.getTaskId())
                 .build();
         String parentOutputDirectory = createOutputDirectory(descriptor.getId(),
                 System.getProperty(TMP_DIR_PROPERTY) + File.separator +STREAMESH_DIR);

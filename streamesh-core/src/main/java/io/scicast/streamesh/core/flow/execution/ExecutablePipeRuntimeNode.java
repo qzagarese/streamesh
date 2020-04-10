@@ -3,6 +3,7 @@ package io.scicast.streamesh.core.flow.execution;
 import io.scicast.streamesh.core.MicroPipe;
 import io.scicast.streamesh.core.flow.FlowGraph;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +22,9 @@ public abstract class ExecutablePipeRuntimeNode extends UpdatableRuntimeNode {
     protected Set<String> expectedNotificationsSubjects;
     protected Map<String, String> upstreamNodeToParameterSpec = new HashMap<>();
 
+    @Getter
+    @Setter
+    protected boolean running;
 
     public ExecutablePipeRuntimeNode(FlowGraph.FlowNode flowNode) {
         this.name = flowNode.getName();
@@ -33,7 +37,7 @@ public abstract class ExecutablePipeRuntimeNode extends UpdatableRuntimeNode {
     }
 
     public boolean canExecute() {
-        return expectedNotificationsSubjects.isEmpty();
+        return expectedNotificationsSubjects.isEmpty() && !running;
     }
 
     @Override

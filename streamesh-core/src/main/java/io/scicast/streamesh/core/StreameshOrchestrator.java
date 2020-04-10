@@ -28,9 +28,13 @@ public interface StreameshOrchestrator {
 
     TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input, Consumer<TaskExecutionEvent<?>> eventHandler);
 
+    TaskDescriptor scheduleTask(String definitionId, String taskId, Map<?, ?> input, Consumer<TaskExecutionEvent<?>> eventHandler);
+
     FlowInstance scheduleFlow(String definitionId, Map<?, ?> input);
 
     FlowInstance scheduleFlow(String definitionId, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler);
+
+    FlowInstance scheduleFlow(String definitionId, String instanceId, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler);
 
     TaskDescriptor scheduleSecureTask(String definitionId, Map<?, ?> input, String publicKey);
 

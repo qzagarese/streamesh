@@ -130,6 +130,10 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     public TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input, Consumer<TaskExecutionEvent<?>> eventHandler) {
+        return scheduleTask(definitionId, UUID.randomUUID().toString(), input, eventHandler);
+    }
+
+    public TaskDescriptor scheduleTask(String definitionId, String taskId, Map<?, ?> input, Consumer<TaskExecutionEvent<?>> eventHandler) {
         Definition definition = getDefinition(definitionId);
         if (!(definition instanceof MicroPipe)) {
             throw new IllegalArgumentException("Cannot schedule tasks for definitions of type " + definition.getType());
@@ -138,6 +142,7 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         TaskDescriptor descriptor = driver.scheduleTask(
                 TaskExecutionIntent.builder()
                     .image(pipe.getImage())
+                    .taskId(taskId)
                     .command(buildCommand(pipe, input))
                     .taskOutputs(pipe.getOutputMapping())
                     .build(),
@@ -157,11 +162,15 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     public FlowInstance scheduleFlow(String definitionId, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler) {
+        return scheduleFlow(definitionId, UUID.randomUUID().toString(), input, eventHandler);
+    }
+
+    public FlowInstance scheduleFlow(String definitionId, String flowInstanceId, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler) {
         Definition definition = getDefinition(definitionId);
         if (!(definition instanceof FlowDefinition)) {
             throw new IllegalArgumentException("Cannot schedule flows for definitions of type " + definition.getType());
         }
-        return new LocalFlowExecutor(context).execute((FlowDefinition) definition, input, eventHandler);
+        return new LocalFlowExecutor(context).execute((FlowDefinition) definition, flowInstanceId, input, eventHandler);
     }
 
     public TaskDescriptor scheduleSecureTask(String definitionId, Map<?, ?> input, String publicKey) {

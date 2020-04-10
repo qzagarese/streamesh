@@ -9,6 +9,7 @@ import java.util.List;
 @Getter
 public class TaskExecutionIntent {
 
+    private String taskId;
     private String image;
     private String command;
     private List<TaskOutput> taskOutputs;

@@ -8,6 +8,6 @@ import java.util.function.Consumer;
 
 public interface FlowExecutor {
 
-    FlowInstance execute(FlowDefinition flow, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler);
+    FlowInstance execute(FlowDefinition flow, String flowInstanceId, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler);
 
 }

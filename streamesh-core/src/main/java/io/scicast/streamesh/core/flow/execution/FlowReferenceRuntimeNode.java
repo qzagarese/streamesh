@@ -19,8 +19,4 @@ public class FlowReferenceRuntimeNode extends ExecutablePipeRuntimeNode {
         value = RuntimeDataValue.builder().build();
     }
 
-    @Override
-    public boolean canExecute() {
-        return super.canExecute() && instanceId == null;
-    }
 }

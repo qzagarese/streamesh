@@ -30,7 +30,7 @@ pipes:
 #        value: ic-demo-streamesh
       - target: ${filename}
         value: ${flow.input.manhattan-file}
-#        value: data/AB_NYC_2019_Manhattan.csv
+#        value: data/AB_NYC_2019_Manhattan.csv 
     output:
       - target: ${output}
         as: manhattan-properties

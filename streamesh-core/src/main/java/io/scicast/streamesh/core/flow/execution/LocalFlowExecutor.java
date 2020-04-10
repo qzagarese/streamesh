@@ -26,11 +26,11 @@ public class LocalFlowExecutor implements FlowExecutor {
     private Consumer<FlowExecutionEvent<?>> upstreamFlowHandler;
 
     @Override
-    public FlowInstance execute(FlowDefinition flow, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler) {
+    public FlowInstance execute(FlowDefinition flow, String flowInstanceId, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler) {
         ExecutionGraph runtimeGraph = new ExecutionGraph(flow.getGraph());
         this.upstreamFlowHandler = eventHandler;
+        this.flowInstanceId = flowInstanceId;
 
-        flowInstanceId = UUID.randomUUID().toString();
         FlowInstance instance = FlowInstance.builder()
             .definitionId(flow.getId())
             .flowName(flow.getName())
@@ -79,13 +79,16 @@ public class LocalFlowExecutor implements FlowExecutor {
 
     private void executeNodes(Set<ExecutablePipeRuntimeNode> executableNodes) {
         StreameshOrchestrator orchestrator = context.getOrchestrator();
+
         executableNodes.forEach(node -> {
+            node.setRunning(true);
+            String executableId = node.getName() + "-" + UUID.randomUUID().toString();
             if (node instanceof MicroPipeRuntimeNode) {
-                TaskDescriptor descriptor = orchestrator.scheduleTask(node.getDefinitionId(), node.getPipeInput(), this::onTaskExecutionEvent);
-                ((MicroPipeRuntimeNode) node).setTaskId(descriptor.getId());
+                ((MicroPipeRuntimeNode) node).setTaskId(executableId);
+                orchestrator.scheduleTask(node.getDefinitionId(),executableId, node.getPipeInput(), this::onTaskExecutionEvent);
             } else if (node instanceof FlowReferenceRuntimeNode){
-                FlowInstance instance = orchestrator.scheduleFlow(node.getDefinitionId(), node.getPipeInput(), this::onFlowExecutionEvent);
-                ((FlowReferenceRuntimeNode) node).setInstanceId(instance.getId());
+                ((FlowReferenceRuntimeNode) node).setInstanceId(executableId);
+                orchestrator.scheduleFlow(node.getDefinitionId(), executableId, node.getPipeInput(), this::onFlowExecutionEvent);
             }
         });
     }
@@ -95,18 +98,22 @@ public class LocalFlowExecutor implements FlowExecutor {
     }
 
     private void onTaskExecutionEvent(TaskExecutionEvent<?> event) {
+        boolean stateUpdated = false;
         FlowInstance instance = context.getStore().getFlowInstance(flowInstanceId);
         if (event.getType().equals(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)) {
             TaskDescriptor descriptor = (TaskDescriptor) event.getDescriptor();
             if (descriptor.getStatus().equals(TaskDescriptor.TaskStatus.COMPLETE)) {
                 MicroPipeRuntimeNode targetNode = getTargetNode(instance, descriptor);
                 updateTargetNode(descriptor, targetNode);
+                stateUpdated = true;
             }
         }
 
-        executeNodes(instance.getExecutionGraph().getExecutableNodes());
-        checkFlowOutput(instance.getExecutionGraph().getOutputNodes());
-        context.getStore().storeFlowInstance(instance);
+        if (stateUpdated) {
+            executeNodes(instance.getExecutionGraph().getExecutableNodes());
+            checkFlowOutput(instance.getExecutionGraph().getOutputNodes());
+            context.getStore().storeFlowInstance(instance);
+        }
 
     }
 
@@ -125,7 +132,7 @@ public class LocalFlowExecutor implements FlowExecutor {
     }
 
     private MicroPipeRuntimeNode getTargetNode(FlowInstance instance, TaskDescriptor descriptor) {
-        return instance.getExecutionGraph().getExecutableNodes().stream()
+        return instance.getExecutionGraph().getNodes().stream()
             .filter(n -> n instanceof MicroPipeRuntimeNode)
             .map(n -> (MicroPipeRuntimeNode) n)
             .filter(n -> descriptor.getId().equals(n.getTaskId()))

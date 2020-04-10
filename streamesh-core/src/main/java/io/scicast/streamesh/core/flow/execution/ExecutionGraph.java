@@ -1,6 +1,7 @@
 package io.scicast.streamesh.core.flow.execution;
 
 import io.scicast.streamesh.core.flow.FlowGraph;
+import lombok.Getter;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 public class ExecutionGraph {
 
 
+    @Getter
     private Set<RuntimeNode> nodes = new HashSet<>();
     private RuntimeNodeFactory factory = new RuntimeNodeFactory();
 
