@@ -3,22 +3,28 @@
     <el-card class="box-card">
       <div slot="header" class="clearfix">
         <span>{{ details.name }}</span>
-        <el-button style="float: right; padding: 3px 0" type="text" 
+        <el-button v-show="isMicropipe()" style="float: right; padding: 3px 0" type="text" 
         @click="goToTaskCreation(id)">Run task</el-button>
+        <el-button v-show="!isMicropipe()" style="float: right; padding: 3px 0" type="text" 
+        @click="goToTaskCreation(id)">Run flow</el-button>
+      </div>
+      <div class="text item">
+        <b>Id:</b>
+        {{ details.id }}
       </div>
       <div class="text item">
         <b>Description:</b>
         {{ (details.description === undefined) ? 'Not provided' : details.description }}
       </div>
-      <div class="text item">
+      <div v-if="isMicropipe()" class="text item">
         <b>Image name:</b>
         {{ details.image }}
       </div>
-      <div class="text item">
+      <div v-if="isMicropipe()" class="text item">
         <b>Image id:</b>
         {{ details.imageId }}
       </div>
-      <div v-if="details.inputMapping" class="text item">
+      <div v-if="isMicropipe() && details.inputMapping" class="text item">
         <b>Command:</b>
         {{ details.inputMapping.baseCmd}}
       </div>
@@ -26,10 +32,10 @@
 
       <el-divider></el-divider>
 
-      <el-table v-if="details.inputMapping" :data="details.inputMapping.parameters" stripe style="width: 100%">
+      <el-table v-if="serviceInput" :data="serviceInput" stripe style="width: 100%">
         <el-table-column label="Input">
           <el-table-column prop="name" label="Name"></el-table-column>
-          <el-table-column prop="internalName" label="Command line"></el-table-column>
+          <el-table-column v-if="isMicropipe()" prop="internalName" label="Command line"></el-table-column>
           <el-table-column prop="optional" label="Required">
             <template slot-scope="scope">{{scope.row.optional ? 'No' : 'Yes'}}</template>
           </el-table-column>
@@ -41,11 +47,11 @@
 
       <el-divider></el-divider>
 
-      <el-table :data="details.outputMapping" stripe style="width: 100%">
+      <el-table v-if="serviceOutput" :data="serviceOutput" stripe style="width: 100%">
         <el-table-column label="Output">
           <el-table-column prop="name" label="Name"></el-table-column>
-          <el-table-column prop="outputDir" label="Container output directory"></el-table-column>
-          <el-table-column prop="fileNamePattern" label="File name pattern"></el-table-column>
+          <el-table-column v-if="isMicropipe()" prop="outputDir" label="Container output directory"></el-table-column>
+          <el-table-column v-if="isMicropipe()" prop="fileNamePattern" label="File name pattern"></el-table-column>
         </el-table-column>
       </el-table>
     </el-card>
@@ -58,7 +64,9 @@ export default {
   name: "ServiceDetails",
   data: () => {
     return {
-      details: {}
+      details: {},
+      serviceInput : [],
+      serviceOutput: []
     };
   },
   props: {
@@ -75,10 +83,21 @@ export default {
         })
         .then(json => {
           this.details = json;
+          if (this.details.type == "micropipe") {
+            console.log()
+            this.serviceInput = this.details.inputMapping.parameters;
+            this.serviceOutput = this.details.outputMapping;
+          } else {
+            this.serviceInput = this.details.input;
+            this.serviceOutput = this.details.output;
+          }
         });
     },
     goToTaskCreation: function(id) {
-        this.$router.push({ path: `/services/${id}/tasks` })
+        this.$router.push({ path: `/services/${id}/instances` })
+    },
+    isMicropipe: function() {
+      return this.details.type == 'micropipe'
     }
   }
 };

@@ -6,7 +6,7 @@
         <el-button style="float: right; padding: 3px 0" type="text" @click="goBack()">Back</el-button>
       </div>
 
-      <div class="text item">
+      <div v-if="isMicropipe()" class="text item">
         <b>Command:</b>
         {{ fullCommand }}
       </div>
@@ -14,18 +14,30 @@
       <el-divider></el-divider>
 
       <el-table
-        v-if="details.inputMapping"
-        :data="details.inputMapping.parameters"
+        v-if="serviceInput"
+        :data="serviceInput"
         stripe
         style="width: 100%"
       >
         <el-table-column label="Input">
           <el-table-column prop="name" label="Name" width="150px"></el-table-column>
-          <el-table-column prop="internalName" label="Value">
+          <el-table-column v-if="isMicropipe()" prop="internalName" label="Value">
             <template slot-scope="scope">
               <div>
-              <el-input 
+              <el-input v-if="isMicropipe()"
                 :placeholder="scope.row.internalName"
+                v-model="scope.row.inputValue"
+                v-on:input="updateOptionsList(scope, scope.row)"
+              >
+              </el-input>                           
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column v-if="!isMicropipe()" prop="name" label="Value">
+            <template slot-scope="scope">
+              <div>
+              <el-input v-if="!isMicropipe()"
+                :placeholder="scope.row.name"
                 v-model="scope.row.inputValue"
                 v-on:input="updateOptionsList(scope, scope.row)"
               >
@@ -59,7 +71,7 @@
       <el-button
         :disabled="!this.runnable"
         style="float: right; margin-bottom: 20px"
-        @click="runTask()"
+        @click="runService()"
       >Run</el-button>
     </el-card>
   </div>
@@ -68,14 +80,16 @@
 
 <script>
 export default {
-  name: "TaskRunner",
+  name: "ServiceRunner",
   data: () => {
     return {
       details: {},
       command: String,
       options: "",
       optionsList: [],
-      runnable: Boolean
+      runnable: Boolean,
+      serviceInput: [],
+      serviceOutput: []
     };
   },
   props: {
@@ -91,23 +105,32 @@ export default {
           return response.json();
         })
         .then(json => {
-          if (json.inputMapping.parameters) {
-            json.inputMapping.parameters.forEach(element => {
-              element.inputValue = "";
-              element.removable = false;
-            });
-          }
-          this.details = json;
-          this.command = json.inputMapping.baseCmd;
+          if (json.type == "micropipe") {
+            this.serviceInput = json.inputMapping.parameters;
+            this.serviceOutput = json.outputMapping;
+            this.command = json.inputMapping.baseCmd;
+          } else {
+            this.serviceInput = json.input;
+            this.serviceOutput = json.output;
+          }  
+          
+          if (this.serviceInput) {
+              this.serviceInput.forEach(element => {
+                element.inputValue = "";
+                element.removable = false;
+              });
+            }
+            
           this.computeRunnable();
+          this.details = json;
         });
     },
     goBack: function() {
       this.$router.back();
     },
-    runTask: function() {
+    runService: function() {
       let body = {};
-      this.details.inputMapping.parameters.forEach(element => {
+      this.serviceInput.forEach(element => {
         if (element.repeatable) {
           if (!body[element.name]) {
             body[element.name] = [];
@@ -118,7 +141,9 @@ export default {
         }
       });
 
-      fetch("http://localhost:8081/api/v1/definitions/" + this.id + "/tasks", {
+      let pathSegment = this.isMicropipe() ? "/tasks" : "/instances";
+
+      fetch("http://localhost:8081/api/v1/definitions/" + this.id + pathSegment, {
         headers: {
           "Content-Type": "application/json"
         },
@@ -133,7 +158,9 @@ export default {
           }
         })
         .then(json => {
-          this.$message("Task scheduled. Id: " + json.taskId);
+          let executableType = this.isMicropipe() ? "Task" : "Flow instance";
+          let executableId = this.isMicropipe() ? json.taskId : json.flowInstanceId;
+          this.$message(executableType + " scheduled. Id: " + executableId);
           this.updateDetails();
         })
         .catch(() => {
@@ -141,7 +168,7 @@ export default {
         });
     },
     addParameterRow: function(scope, row) {
-      this.details.inputMapping.parameters.push({
+      this.serviceInput.push({
         name: row.name,
         internalName: row.internalName,
         optional: row.optional,
@@ -150,7 +177,7 @@ export default {
       });
     },
     removeParameterRow: function(index) {
-      this.details.inputMapping.parameters.splice(index, 1);
+      this.serviceInput.splice(index, 1);
       this.removeFromOptionList(index);
       this.updateOptions();
     },
@@ -180,7 +207,7 @@ export default {
       this.options = newOptions;
     },
     computeRunnable: function() {
-      let parameters = this.details.inputMapping.parameters;
+      let parameters = this.serviceInput;
       for (let index = 0; index < parameters.length; index++) {
         const element = parameters[index];
         if (
@@ -193,6 +220,9 @@ export default {
         }
       }
       this.runnable = true;
+    },
+    isMicropipe: function() {
+      return this.details.type == 'micropipe'
     }
   },
   computed: {

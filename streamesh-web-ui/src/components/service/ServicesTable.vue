@@ -15,9 +15,9 @@
       stripe
       style="width: 100%"
     >
-      <el-table-column prop="id" label="Id" width="300"></el-table-column>
-      <el-table-column sortable prop="name" label="Name" width="180"></el-table-column>
-      <el-table-column sortable prop="image" label="Image"></el-table-column>
+      <el-table-column sortable prop="type" label="Type" ></el-table-column>
+      <el-table-column sortable prop="id" label="Id"></el-table-column>
+      <el-table-column sortable prop="name" label="Name" ></el-table-column>
       <el-table-column align="right">
         <template slot="header" slot-scope="scope">
           <el-input
@@ -69,7 +69,7 @@ export default {
       this.$router.push({ path: `/services/${id}` });
     },
     goToRunTask: function(id) {
-      this.$router.push({ path: `/services/${id}/tasks` });
+      this.$router.push({ path: `/services/${id}/instances` });
     },
     postService: function(file) {
       const reader = new FileReader()

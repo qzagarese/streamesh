@@ -8,7 +8,7 @@ import ServicesTable from './components/service/ServicesTable.vue'
 import ServiceDetails from './components/service/ServiceDetails.vue'
 import TasksTable from './components/task/TasksTable.vue'
 import TasksDetails from './components/task/TaskDetails.vue'
-import TaskRunner from './components/task/TaskRunner.vue'
+import ServiceRunner from './components/service/ServiceRunner.vue'
 import NewFlow from './components/NewFlow.vue'
 
 
@@ -20,7 +20,7 @@ const routes = [
   { path: '/services', component: ServicesTable },
   { path: '/tasks', component: TasksTable},
   { path: '/services/:id', component: ServiceDetails, props: true },
-  { path: '/services/:id/tasks', component: TaskRunner, props: true},
+  { path: '/services/:id/instances', component: ServiceRunner, props: true},
   { path: '/flows', component: NewFlow},
   { path: '/tasks/:id', component: TasksDetails, props: true }
 ]
