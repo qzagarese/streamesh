@@ -15,7 +15,7 @@
 
       <el-table
         v-if="serviceInput"
-        :data="serviceInput"
+        :data="serviceInput.parameters"
         stripe
         style="width: 100%"
       >
@@ -88,7 +88,7 @@ export default {
       options: "",
       optionsList: [],
       runnable: Boolean,
-      serviceInput: [],
+      serviceInput: {},
       serviceOutput: []
     };
   },
@@ -106,16 +106,16 @@ export default {
         })
         .then(json => {
           if (json.type == "micropipe") {
-            this.serviceInput = json.inputMapping.parameters;
+            this.serviceInput.parameters = json.inputMapping.parameters;
             this.serviceOutput = json.outputMapping;
             this.command = json.inputMapping.baseCmd;
           } else {
-            this.serviceInput = json.input;
+            this.serviceInput.parameters = json.input;
             this.serviceOutput = json.output;
           }  
           
-          if (this.serviceInput) {
-              this.serviceInput.forEach(element => {
+          if (this.serviceInput.parameters) {
+              this.serviceInput.parameters.forEach(element => {
                 element.inputValue = "";
                 element.removable = false;
               });
@@ -130,7 +130,7 @@ export default {
     },
     runService: function() {
       let body = {};
-      this.serviceInput.forEach(element => {
+      this.serviceInput.parameters.forEach(element => {
         if (element.repeatable) {
           if (!body[element.name]) {
             body[element.name] = [];
@@ -168,7 +168,7 @@ export default {
         });
     },
     addParameterRow: function(scope, row) {
-      this.serviceInput.push({
+      this.serviceInput.parameters.push({
         name: row.name,
         internalName: row.internalName,
         optional: row.optional,
@@ -177,7 +177,7 @@ export default {
       });
     },
     removeParameterRow: function(index) {
-      this.serviceInput.splice(index, 1);
+      this.serviceInput.parameters.splice(index, 1);
       this.removeFromOptionList(index);
       this.updateOptions();
     },
@@ -207,7 +207,7 @@ export default {
       this.options = newOptions;
     },
     computeRunnable: function() {
-      let parameters = this.serviceInput;
+      let parameters = this.serviceInput.parameters;
       for (let index = 0; index < parameters.length; index++) {
         const element = parameters[index];
         if (
