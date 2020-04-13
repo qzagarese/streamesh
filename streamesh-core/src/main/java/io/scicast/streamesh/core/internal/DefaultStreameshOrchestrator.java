@@ -125,6 +125,11 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         return streameshStore.getTasksByDefinition(definitionId);
     }
 
+    public Set<TaskDescriptor> getTasksByFlowInstanceId(String flowInstanceId) {
+        return streameshStore.getTasksByFlowInstance(flowInstanceId);
+    }
+
+
     public TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input) {
         return scheduleTask(definitionId, input, event -> {});
     }
@@ -232,5 +237,10 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
             stream = CryptoUtil.getCipherInputStream(stream, job.getKey());
         }
         return stream;
+    }
+
+    @Override
+    public Set<FlowInstance> getAllFlowInstances() {
+        return streameshStore.getAllFlowInstances();
     }
 }

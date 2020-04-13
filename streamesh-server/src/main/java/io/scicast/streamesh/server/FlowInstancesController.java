@@ -4,13 +4,11 @@ import io.scicast.streamesh.core.StreameshOrchestrator;
 import io.scicast.streamesh.core.flow.FlowInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 public class FlowInstancesController {
@@ -25,6 +23,11 @@ public class FlowInstancesController {
         Map<String, Object> result = new HashMap<>();
         result.put("flowInstanceId", instance.getId());
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/flow-instances")
+    public ResponseEntity<Set<FlowInstance>> getFlowInstances() {
+        return ResponseEntity.ok(orchestrator.getAllFlowInstances());
     }
 
 }

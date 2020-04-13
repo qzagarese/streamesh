@@ -31,4 +31,6 @@ public interface StreameshStore {
     TaskDescriptor getTaskById(String jobId);
 
     void updateTask(String definitionId, TaskDescriptor descriptor);
+
+    Set<FlowInstance> getAllFlowInstances();
 }

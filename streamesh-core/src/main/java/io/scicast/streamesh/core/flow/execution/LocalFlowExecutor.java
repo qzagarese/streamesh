@@ -9,6 +9,7 @@ import io.scicast.streamesh.core.flow.FlowParameter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,11 +37,25 @@ public class LocalFlowExecutor implements FlowExecutor {
             .flowName(flow.getName())
             .id(flowInstanceId)
             .executionGraph(runtimeGraph)
+            .started(LocalDateTime.now())
+            .status(FlowInstance.FlowInstanceStatus.LAUNCHING)
             .build();
         context.getStore().storeFlowInstance(instance);
         init(runtimeGraph, input);
+        instance = instance.withStatus(FlowInstance.FlowInstanceStatus.RUNNING);
+        if (allDone(instance)) {
+            instance = instance.withStatus(FlowInstance.FlowInstanceStatus.COMPLETE)
+                    .withCompleted(LocalDateTime.now());
+
+        }
         context.getStore().storeFlowInstance(instance);
         return instance;
+    }
+
+    private boolean allDone(FlowInstance instance) {
+        return instance.getExecutionGraph().getOutputNodes().stream()
+                .allMatch(node -> node.getValue() != null && node.getValue().getParts().stream()
+                        .allMatch(p -> p.getState().equals(RuntimeDataValue.DataState.COMPLETE)));
     }
 
     private void init(ExecutionGraph runtimeGraph, Map<?, ?> input) {
@@ -112,6 +127,10 @@ public class LocalFlowExecutor implements FlowExecutor {
         if (stateUpdated) {
             executeNodes(instance.getExecutionGraph().getExecutableNodes());
             checkFlowOutput(instance.getExecutionGraph().getOutputNodes());
+            if (allDone(instance)) {
+                instance = instance.withStatus(FlowInstance.FlowInstanceStatus.COMPLETE)
+                        .withCompleted(LocalDateTime.now());
+            }
             context.getStore().storeFlowInstance(instance);
         }
 

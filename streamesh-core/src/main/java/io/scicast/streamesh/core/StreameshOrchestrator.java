@@ -24,6 +24,8 @@ public interface StreameshOrchestrator {
 
     Set<TaskDescriptor> getTasksByDefinition(String definitionId);
 
+    Set<TaskDescriptor> getTasksByFlowInstanceId(String flowInstanceId);
+
     TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input);
 
     TaskDescriptor scheduleTask(String definitionId, Map<?, ?> input, Consumer<TaskExecutionEvent<?>> eventHandler);
@@ -41,4 +43,6 @@ public interface StreameshOrchestrator {
     TaskDescriptor getTask(String taskId);
 
     InputStream getTaskOutput(String taskDescriptorId, String outputName);
+
+    Set<FlowInstance> getAllFlowInstances();
 }

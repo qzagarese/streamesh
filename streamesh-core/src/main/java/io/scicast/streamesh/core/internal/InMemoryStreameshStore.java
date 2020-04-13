@@ -2,6 +2,7 @@ package io.scicast.streamesh.core.internal;
 
 import io.scicast.streamesh.core.*;
 import io.scicast.streamesh.core.flow.FlowInstance;
+import io.scicast.streamesh.core.flow.execution.MicroPipeRuntimeNode;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,9 +57,12 @@ public class InMemoryStreameshStore implements StreameshStore {
 
     @Override
     public Set<TaskDescriptor> getTasksByFlowInstance(String flowInstanceId) {
-        return null;
+        return flowInstances.get(flowInstanceId).getExecutionGraph().getNodes().stream()
+                .filter(node -> node instanceof MicroPipeRuntimeNode)
+                .map(node -> (MicroPipeRuntimeNode) node)
+                .map(node -> tasks.get(node.getTaskId()))
+                .collect(Collectors.toSet());
     }
-
 
     @Override
     public Definition getDefinitionById(String id) {
@@ -115,5 +119,10 @@ public class InMemoryStreameshStore implements StreameshStore {
             taskDescriptors.add(descriptor);
         }
         pipesToTasks.put((MicroPipe) definition, taskDescriptors);
+    }
+
+    @Override
+    public Set<FlowInstance> getAllFlowInstances() {
+        return flowInstances.values().stream().collect(Collectors.toSet());
     }
 }

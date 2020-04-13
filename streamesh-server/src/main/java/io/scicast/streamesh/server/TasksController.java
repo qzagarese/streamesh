@@ -77,4 +77,10 @@ public class TasksController {
         return ResponseEntity.ok(orchestrator.getAllTasks());
     }
 
+    @GetMapping("/flow-instances/{flowInstanceId}/tasks")
+    public ResponseEntity<Collection<TaskDescriptor>> getTasksByFlowInstanceId(@PathVariable("flowInstanceId") String flowInstanceId) {
+        return ResponseEntity.ok(orchestrator.getTasksByFlowInstanceId(flowInstanceId));
+    }
+
+
 }
