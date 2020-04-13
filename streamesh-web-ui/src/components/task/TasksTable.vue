@@ -1,6 +1,6 @@
 <template v-on:show="updateList" >
   <div>
-    
+    <el-checkbox v-model="autoRefresh">Auto refresh</el-checkbox>
     <el-table
       :data="tableData.filter(data => !search || data.serviceName.toLowerCase().includes(search.toLowerCase()))"
       stripe
@@ -38,7 +38,8 @@ export default {
   data: () => {
     return {
       tableData: [],
-      search: ""
+      search: "",
+      autoRefresh: true
     }
   },
   props: {
@@ -64,6 +65,9 @@ export default {
         .then(json => {
           this.tableData = json;
         });
+        if (this.autoRefresh) {
+          setTimeout(this.updateList, 5000)
+        }
     },
     goToDetails: function(id) {
       this.$router.push({ path: `/tasks/${id}` });

@@ -1,6 +1,7 @@
 <template v-on:show="updateList" >
   <div>
-    
+    <el-checkbox v-model="autoRefresh">Auto refresh</el-checkbox>
+
     <el-table
       :data="tableData.filter(data => !search || data.serviceName.toLowerCase().includes(search.toLowerCase()))"
       stripe
@@ -21,10 +22,7 @@
           />
         </template>
         <template slot-scope="scope">
-          <el-button
-            @click.native.prevent="showTasks(scope.row.id)"
-            size="small"
-          >Tasks</el-button>
+          <el-button @click.native.prevent="showTasks(scope.row.id)" size="small">Tasks</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -38,8 +36,9 @@ export default {
   data: () => {
     return {
       tableData: [],
-      search: ""
-    }
+      search: "",
+      autoRefresh: true
+    };
   },
   mounted() {
     this.updateList();
@@ -53,10 +52,13 @@ export default {
         .then(json => {
           this.tableData = json;
         });
+        if (this.autoRefresh) {
+          setTimeout(this.updateList, 5000)
+        }
     },
     showTasks: function(id) {
       this.$router.push({ path: `/flow-instances/${id}/tasks` });
-    },
+    }
   }
-}
+};
 </script>

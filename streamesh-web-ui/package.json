@@ -10,6 +10,7 @@
   "dependencies": {
     "core-js": "^3.6.4",
     "element-ui": "^2.4.5",
+    "vis-network": "^7.5.2",
     "vue": "^2.6.11",
     "vue-router": "^3.1.6"
   },
