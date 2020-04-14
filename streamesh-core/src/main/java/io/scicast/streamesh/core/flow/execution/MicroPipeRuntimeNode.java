@@ -1,5 +1,6 @@
 package io.scicast.streamesh.core.flow.execution;
 
+import io.scicast.streamesh.core.MicroPipe;
 import io.scicast.streamesh.core.TaskParameter;
 import io.scicast.streamesh.core.flow.FlowGraph;
 import lombok.Getter;
@@ -13,6 +14,7 @@ public class MicroPipeRuntimeNode extends ExecutablePipeRuntimeNode {
 
     public MicroPipeRuntimeNode(FlowGraph.FlowNode flowNode) {
         super(flowNode);
+        definitionId = ((MicroPipe) flowNode.getValue()).getId();
         flowNode.getIncomingLinks().stream().map(edge -> edge.getSource()).forEach(node -> {
             upstreamNodeToParameterSpec.put(node.getName(), ((TaskParameter) node.getValue()).getName());
         });

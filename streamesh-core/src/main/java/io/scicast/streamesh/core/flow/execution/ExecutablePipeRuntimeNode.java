@@ -29,7 +29,6 @@ public abstract class ExecutablePipeRuntimeNode extends UpdatableRuntimeNode {
     public ExecutablePipeRuntimeNode(FlowGraph.FlowNode flowNode) {
         this.name = flowNode.getName();
         this.staticGraphNode = flowNode;
-        definitionId = ((MicroPipe) flowNode.getValue()).getId();
         expectedNotificationsSubjects = flowNode.getIncomingLinks().stream()
                 .map(flowEdge -> flowEdge.getSource())
                 .map(node -> node.getName())

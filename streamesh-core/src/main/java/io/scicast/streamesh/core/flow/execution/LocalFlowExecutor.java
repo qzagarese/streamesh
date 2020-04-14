@@ -109,7 +109,34 @@ public class LocalFlowExecutor implements FlowExecutor {
     }
 
     private void onFlowExecutionEvent(FlowExecutionEvent<?> event) {
+        boolean stateUpdated = false;
+        FlowInstance instance = context.getStore().getFlowInstance(flowInstanceId);
+        if (event.getType().equals(FlowExecutionEvent.EventType.OUTPUT_AVAILABILITY)) {
+            OutputAvailabilityDescriptor descriptor = (OutputAvailabilityDescriptor) event.getDescriptor();
+            FlowReferenceRuntimeNode targetNode = getTargetFlowReferenceNode(instance, descriptor);
+            targetNode.update(descriptor.getRuntimeDataValue());
+            stateUpdated = true;
+        }
 
+        if (stateUpdated) {
+            executeNodes(instance.getExecutionGraph().getExecutableNodes());
+            checkFlowOutput(instance.getExecutionGraph().getOutputNodes());
+            if (allDone(instance)) {
+                instance = instance.withStatus(FlowInstance.FlowInstanceStatus.COMPLETE)
+                        .withCompleted(LocalDateTime.now());
+            }
+            context.getStore().storeFlowInstance(instance);
+        }
+
+    }
+
+    private FlowReferenceRuntimeNode getTargetFlowReferenceNode(FlowInstance instance, OutputAvailabilityDescriptor descriptor) {
+        return instance.getExecutionGraph().getNodes().stream()
+                .filter(node -> node instanceof FlowReferenceRuntimeNode)
+                .map(node -> (FlowReferenceRuntimeNode) node)
+                .filter(node -> descriptor.getFlowInstanceId().equals(node.getInstanceId()))
+                .findFirst()
+                .orElse(null);
     }
 
     private void onTaskExecutionEvent(TaskExecutionEvent<?> event) {
@@ -118,7 +145,7 @@ public class LocalFlowExecutor implements FlowExecutor {
         if (event.getType().equals(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)) {
             TaskDescriptor descriptor = (TaskDescriptor) event.getDescriptor();
             if (descriptor.getStatus().equals(TaskDescriptor.TaskStatus.COMPLETE)) {
-                MicroPipeRuntimeNode targetNode = getTargetNode(instance, descriptor);
+                MicroPipeRuntimeNode targetNode = getTargetMicroPipeNode(instance, descriptor);
                 updateTargetNode(descriptor, targetNode);
                 stateUpdated = true;
             }
@@ -150,7 +177,7 @@ public class LocalFlowExecutor implements FlowExecutor {
             .build());
     }
 
-    private MicroPipeRuntimeNode getTargetNode(FlowInstance instance, TaskDescriptor descriptor) {
+    private MicroPipeRuntimeNode getTargetMicroPipeNode(FlowInstance instance, TaskDescriptor descriptor) {
         return instance.getExecutionGraph().getNodes().stream()
             .filter(n -> n instanceof MicroPipeRuntimeNode)
             .map(n -> (MicroPipeRuntimeNode) n)
