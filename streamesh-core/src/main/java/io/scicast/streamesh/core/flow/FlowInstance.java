@@ -26,7 +26,7 @@ public class FlowInstance {
     private ExecutionGraph executionGraph;
 
     public enum FlowInstanceStatus {
-        LAUNCHING, RUNNING, COMPLETE
+        LAUNCHING, RUNNING, COMPLETE, KILLED
     }
 
 }

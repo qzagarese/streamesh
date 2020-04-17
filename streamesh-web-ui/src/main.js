@@ -10,6 +10,7 @@ import TasksTable from './components/task/TasksTable.vue'
 import TasksDetails from './components/task/TaskDetails.vue'
 import ServiceRunner from './components/service/ServiceRunner.vue'
 import FlowInstancesTable from './components/flow/FlowInstancesTable.vue'
+import FlowInstanceDetails from './components/flow/FlowInstanceDetails.vue'
 
 Vue.config.productionTip = false
 Vue.use(VueRouter)
@@ -19,6 +20,7 @@ const routes = [
   { path: '/services', component: ServicesTable },
   { path: '/tasks', component: TasksTable},
   { path: '/flow-instances/:flowInstanceId/tasks', component: TasksTable, props: true},
+  { path: '/flow-instances/:flowInstanceId/details', component: FlowInstanceDetails, props: true},
   { path: '/services/:id', component: ServiceDetails, props: true },
   { path: '/services/:id/instances', component: ServiceRunner, props: true},
   { path: '/flows', component: FlowInstancesTable},

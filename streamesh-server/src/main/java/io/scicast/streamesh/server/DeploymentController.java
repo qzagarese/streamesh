@@ -70,6 +70,12 @@ public class DeploymentController {
         return ResponseEntity.ok(orchestrator.getDefinitionByName(name));
     }
 
+    @DeleteMapping("/definitions/{id}")
+    public ResponseEntity<Void> removeDefinition(@PathVariable("id") String id) {
+        orchestrator.removeDefinition(id);
+        return ResponseEntity.ok(null);
+    }
+
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(NotFoundException.class)
     public void handleNotFound() {

@@ -22,6 +22,7 @@
           />
         </template>
         <template slot-scope="scope">
+          <el-button @click.native.prevent="showDetails(scope.row.id)" size="small">Details</el-button>
           <el-button @click.native.prevent="showTasks(scope.row.id)" size="small">Tasks</el-button>
         </template>
       </el-table-column>
@@ -58,6 +59,9 @@ export default {
     },
     showTasks: function(id) {
       this.$router.push({ path: `/flow-instances/${id}/tasks` });
+    },
+    showDetails: function(id) {
+      this.$router.push({ path: `/flow-instances/${id}/details` });
     }
   }
 };

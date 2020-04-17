@@ -32,6 +32,10 @@ public interface StreameshOrchestrator {
 
     TaskDescriptor scheduleTask(String definitionId, String taskId, Map<?, ?> input, Consumer<TaskExecutionEvent<?>> eventHandler);
 
+    void killTask(String taskId);
+
+    void killFlowInstance(String flowInstanceId);
+
     FlowInstance scheduleFlow(String definitionId, Map<?, ?> input);
 
     FlowInstance scheduleFlow(String definitionId, Map<?, ?> input, Consumer<FlowExecutionEvent<?>> eventHandler);
@@ -45,4 +49,6 @@ public interface StreameshOrchestrator {
     InputStream getTaskOutput(String taskDescriptorId, String outputName);
 
     Set<FlowInstance> getAllFlowInstances();
+
+    FlowInstance getFlowInstance(String flowInstanceId);
 }

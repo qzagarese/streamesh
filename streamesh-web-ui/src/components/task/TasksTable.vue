@@ -71,7 +71,7 @@ export default {
     },
     goToDetails: function(id) {
       this.$router.push({ path: `/tasks/${id}` });
-    },
+    }
   }
 }
 </script>

@@ -33,4 +33,8 @@ public interface StreameshStore {
     void updateTask(String definitionId, TaskDescriptor descriptor);
 
     Set<FlowInstance> getAllFlowInstances();
+
+    void removeTask(String taskId);
+
+    void removeFlowInstance(String flowInstanceId);
 }

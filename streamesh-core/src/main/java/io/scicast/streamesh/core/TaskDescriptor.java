@@ -23,7 +23,7 @@ public class TaskDescriptor {
     private LocalDateTime exited;
 
     public enum TaskStatus {
-        FAILED, RUNNING, COMPLETE
+        FAILED, RUNNING, COMPLETE, KILLED
     }
 
 }

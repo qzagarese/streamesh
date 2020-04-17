@@ -10,6 +10,8 @@ public interface OrchestrationDriver {
 
     TaskDescriptor scheduleTask(TaskExecutionIntent intent, Consumer<TaskExecutionEvent<?>> onUpdate, StreameshContext context);
 
+    void killTask(String taskId, StreameshContext context);
+
     InputStream getTaskOutput(String taskId, String outputName);
 
 }

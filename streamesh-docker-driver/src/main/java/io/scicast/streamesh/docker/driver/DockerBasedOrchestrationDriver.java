@@ -60,6 +60,7 @@ public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
         return respFut.join();
     }
 
+    @Override
     public TaskDescriptor scheduleTask(TaskExecutionIntent intent,
                                        Consumer<TaskExecutionEvent<?>> onStatusUpdate,
                                        StreameshContext context) {
@@ -96,6 +97,16 @@ public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
             onStatusUpdate.accept(event);
         });
         return runner.init();
+    }
+
+    @Override
+    public void killTask(String taskId, StreameshContext context) {
+        TaskDescriptor descriptor = context.getStore().getTaskById(taskId);
+        if (descriptor ==null) {
+            throw new NotFoundException("Cannot find the task specified by id " + taskId);
+        }
+        client.removeContainerCmd(descriptor.getContainerId()).withForce(true).exec();
+        context.getStore().updateTask(descriptor.getServiceId(), descriptor.withStatus(TaskDescriptor.TaskStatus.KILLED));
     }
 
     private CreateContainerCmd setupServerIpMapping(CreateContainerCmd cmd, StreameshServerInfo serverInfo) {

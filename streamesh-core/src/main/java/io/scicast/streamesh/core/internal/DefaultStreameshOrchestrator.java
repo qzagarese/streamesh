@@ -5,12 +5,8 @@ import io.scicast.streamesh.core.crypto.CryptoUtil;
 import io.scicast.streamesh.core.exception.InvalidCmdParameterException;
 import io.scicast.streamesh.core.exception.MissingParameterException;
 import io.scicast.streamesh.core.exception.NotFoundException;
-import io.scicast.streamesh.core.flow.FlowDefinition;
-import io.scicast.streamesh.core.flow.FlowInstance;
-import io.scicast.streamesh.core.flow.execution.FlowExecutionEvent;
-import io.scicast.streamesh.core.flow.execution.LocalFlowExecutor;
-import io.scicast.streamesh.core.flow.FlowGraph;
-import io.scicast.streamesh.core.flow.FlowGraphBuilder;
+import io.scicast.streamesh.core.flow.*;
+import io.scicast.streamesh.core.flow.execution.*;
 import io.scicast.streamesh.core.internal.reflect.Scope;
 import io.scicast.streamesh.core.internal.reflect.ScopeFactory;
 
@@ -24,6 +20,9 @@ import java.util.stream.StreamSupport;
 public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
 
     private static final String BASE_API_PATH = "/api/v1";
+    private static final String STREAMESH_SERVER_HOST_NAME = "streamesh-server";
+    private static final int PORT = 8080;
+
     private final StreameshStore streameshStore = new InMemoryStreameshStore();
     private Logger logger = Logger.getLogger(this.getClass().getSimpleName());
     private final StreameshContext context;
@@ -49,9 +48,9 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
                 .store(streameshStore)
                 .orchestrator(this)
                 .serverInfo(StreameshServerInfo.builder()
-                        .host("streamesh-server")
+                        .host(STREAMESH_SERVER_HOST_NAME)
                         .ipAddress(serverIpAddress)
-                        .port(8080)
+                        .port(PORT)
                         .baseApiPath(BASE_API_PATH)
                         .protocol(StreameshServerInfo.WebProtocol.http)
                         .build())
@@ -110,8 +109,56 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     public void removeDefinition(String id) {
+        Definition definition = streameshStore.getDefinitionById(id);
+        if (definition == null) {
+            throw new NotFoundException("Could not find a definition with id " + id);
+        }
+        verifyNoDependingDefinitions(definition);
+        if (definition instanceof MicroPipe) {
+            streameshStore.getTasksByDefinition(id).stream()
+                    .map(task -> task.getId())
+                    .forEach(taskId -> {
+                        this.killTask(taskId);
+                        streameshStore.removeTask(taskId);
+                    });
+        } else {
+            streameshStore.getFlowInstancesByDefinition(id).stream()
+                    .map(fi -> fi.getId())
+                    .forEach(flowInstanceId -> {
+                        this.killFlowInstance(flowInstanceId);
+                        streameshStore.removeFlowInstance(flowInstanceId);
+                    });
+
+        }
         streameshStore.removeDefinition(id);
     }
+
+    private void verifyNoDependingDefinitions(Definition definition) {
+        Set<FlowDefinition> allFlows = streameshStore.getAllDefinitions().stream()
+                .filter(d -> d instanceof FlowDefinition)
+                .map(d -> (FlowDefinition) d)
+                .collect(Collectors.toSet());
+        Set<String> dependingDefinitions = allFlows.stream()
+                .filter(flow -> !flow.getGraph().getNodes().stream()
+                        .filter(node -> {
+                            Object nodeValue = node.getValue();
+                            boolean dependant = nodeValue instanceof MicroPipe
+                                    && definition.getId().equals(((MicroPipe) nodeValue).getId());
+                            dependant = dependant || (nodeValue instanceof FlowReference
+                                    && definition.getId().equals(((FlowReference) nodeValue).getDefinition().getId()));
+                            return dependant;
+                        }).collect(Collectors.toSet()).isEmpty())
+                .map(flow -> flow.getName())
+                .collect(Collectors.toSet());
+        if (!dependingDefinitions.isEmpty()) {
+            throw new IllegalStateException(String.format("Cannot remove service %s. The following services depend on it: \n%s." +
+                            "Remove them first.",
+                    definition.getName(),
+                    dependingDefinitions.stream()
+                            .map(name -> "- " + name)
+                            .collect(Collectors.joining("\n"))));
+        }
+     }
 
     public Set<Definition> getDefinitions() {
         return streameshStore.getAllDefinitions();
@@ -162,6 +209,29 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         return descriptor;
     }
 
+    @Override
+    public void killTask(String taskId) {
+        driver.killTask(taskId, context);
+    }
+
+    @Override
+    public void killFlowInstance(String flowInstanceId) {
+        FlowInstance flowInstance = streameshStore.getFlowInstance(flowInstanceId);
+        if (flowInstance == null) {
+            throw new NotFoundException("Could not find a flow instance with id " + flowInstanceId);
+        }
+        flowInstance.getExecutionGraph().getNodes().stream()
+                .filter(node -> node instanceof ExecutablePipeRuntimeNode)
+                .forEach(node -> {
+                    if (node instanceof MicroPipeRuntimeNode) {
+                        killTask(((MicroPipeRuntimeNode) node).getTaskId());
+                    } else {
+                        killFlowInstance(((FlowReferenceRuntimeNode)node).getInstanceId());
+                    }
+                });
+        streameshStore.storeFlowInstance(flowInstance.withStatus(FlowInstance.FlowInstanceStatus.KILLED));
+    }
+
     public FlowInstance scheduleFlow(String definitionId, Map<?, ?> input) {
         return scheduleFlow(definitionId, input, event -> {});
     }
@@ -186,11 +256,11 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     }
 
     public TaskDescriptor getTask(String taskId) {
-        TaskDescriptor job = streameshStore.getTaskById(taskId);
-        if (job == null) {
-            throw new NotFoundException(String.format("No job found for id %s", taskId));
+        TaskDescriptor task = streameshStore.getTaskById(taskId);
+        if (task == null) {
+            throw new NotFoundException(String.format("No task found for id %s", taskId));
         }
-        return job;
+        return task;
     }
 
     private void updateState(MicroPipe definition, TaskExecutionEvent<?> event) {
@@ -242,5 +312,10 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
     @Override
     public Set<FlowInstance> getAllFlowInstances() {
         return streameshStore.getAllFlowInstances();
+    }
+
+    @Override
+    public FlowInstance getFlowInstance(String flowInstanceId) {
+        return streameshStore.getFlowInstance(flowInstanceId);
     }
 }

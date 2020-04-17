@@ -3,10 +3,18 @@
     <el-card class="box-card">
       <div slot="header" class="clearfix">
         <span>{{ details.name }}</span>
-        <el-button v-show="isMicropipe()" style="float: right; padding: 3px 0" type="text" 
-        @click="goToTaskCreation(id)">Run task</el-button>
-        <el-button v-show="!isMicropipe()" style="float: right; padding: 3px 0" type="text" 
-        @click="goToTaskCreation(id)">Run flow</el-button>
+        <el-button
+          v-show="isMicropipe()"
+          style="float: right; padding: 3px 0"
+          type="text"
+          @click="goToTaskCreation(id)"
+        >Run task</el-button>
+        <el-button
+          v-show="!isMicropipe()"
+          style="float: right; padding: 3px 0"
+          type="text"
+          @click="goToTaskCreation(id)"
+        >Run flow</el-button>
       </div>
       <div class="text item">
         <b>Id:</b>
@@ -28,7 +36,6 @@
         <b>Command:</b>
         {{ details.inputMapping.baseCmd}}
       </div>
-
 
       <el-divider></el-divider>
 
@@ -54,7 +61,23 @@
           <el-table-column v-if="isMicropipe()" prop="fileNamePattern" label="File name pattern"></el-table-column>
         </el-table-column>
       </el-table>
+
+      <el-divider></el-divider>
+
+      <el-button
+        style="float: right; padding: 10px 0"
+        type="danger"
+        @click="dialogVisible = true"
+      >Delete</el-button>
     </el-card>
+
+    <el-dialog title="Tips" :visible.sync="dialogVisible" width="30%" >
+      <span>This is a message</span>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="dialogVisible = false">Cancel</el-button>
+        <el-button type="danger" @click="confirmDeletion()">Delete</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -65,8 +88,9 @@ export default {
   data: () => {
     return {
       details: {},
-      serviceInput : [],
-      serviceOutput: []
+      serviceInput: [],
+      serviceOutput: [],
+      dialogVisible: false
     };
   },
   props: {
@@ -84,7 +108,7 @@ export default {
         .then(json => {
           this.details = json;
           if (this.details.type == "micropipe") {
-            console.log()
+            console.log();
             this.serviceInput = this.details.inputMapping.parameters;
             this.serviceOutput = this.details.outputMapping;
           } else {
@@ -94,10 +118,21 @@ export default {
         });
     },
     goToTaskCreation: function(id) {
-        this.$router.push({ path: `/services/${id}/instances` })
+      this.$router.push({ path: `/services/${id}/instances` });
     },
     isMicropipe: function() {
-      return this.details.type == 'micropipe'
+      return this.details.type == "micropipe";
+    },
+    confirmDeletion: function() {
+      var component = this
+      fetch('http://localhost:8081/api/v1/definitions' + this.id, {
+        method: 'DELETE'
+      }).then(() => {
+        component.$router.push({ path: `/services` });
+      }).catch(() => {
+        this.$message("Oops, something went wrong :-(");
+      })
+      this.dialogVisible = false
     }
   }
 };

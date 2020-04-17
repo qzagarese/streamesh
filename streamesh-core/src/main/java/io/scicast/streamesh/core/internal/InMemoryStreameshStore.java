@@ -21,8 +21,6 @@ public class InMemoryStreameshStore implements StreameshStore {
     private Map<String, TaskDescriptor> tasks = new HashMap<String, TaskDescriptor>();
     private Map<MicroPipe, Set<TaskDescriptor>> pipesToTasks = new HashMap<MicroPipe, Set<TaskDescriptor>>();
 
-    public InMemoryStreameshStore() {
-    }
 
     @Override
     public void storeDefinition(Definition definition) {
@@ -124,5 +122,15 @@ public class InMemoryStreameshStore implements StreameshStore {
     @Override
     public Set<FlowInstance> getAllFlowInstances() {
         return flowInstances.values().stream().collect(Collectors.toSet());
+    }
+
+    @Override
+    public void removeTask(String taskId) {
+        tasks.remove(taskId);
+    }
+
+    @Override
+    public void removeFlowInstance(String flowInstanceId) {
+        flowInstances.remove(flowInstanceId);
     }
 }
