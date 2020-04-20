@@ -8,18 +8,19 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class InMemoryStreameshStore implements StreameshStore {
 
-    private Map<String, Definition> definitions = new HashMap<>();
-    private Map<String, Definition> definitionsByName = new HashMap<>();
+    private Map<String, Definition> definitions = new ConcurrentHashMap<>();
+    private Map<String, Definition> definitionsByName = new ConcurrentHashMap<>();
 
-    private Map<String, FlowInstance> flowInstances = new HashMap<>();
-    private Map<String, Set<FlowInstance>> flowDefinitionsToInstances = new HashMap<>();
+    private Map<String, FlowInstance> flowInstances = new ConcurrentHashMap<>();
+    private Map<String, Set<FlowInstance>> flowDefinitionsToInstances = new ConcurrentHashMap<>();
 
-    private Map<String, TaskDescriptor> tasks = new HashMap<String, TaskDescriptor>();
-    private Map<MicroPipe, Set<TaskDescriptor>> pipesToTasks = new HashMap<MicroPipe, Set<TaskDescriptor>>();
+    private Map<String, TaskDescriptor> tasks = new ConcurrentHashMap<>();
+    private Map<MicroPipe, Set<TaskDescriptor>> pipesToTasks = new ConcurrentHashMap<>();
 
 
     @Override
@@ -50,7 +51,7 @@ public class InMemoryStreameshStore implements StreameshStore {
 
     @Override
     public Set<FlowInstance> getFlowInstancesByDefinition(String flowDefinitionId) {
-        return flowDefinitionsToInstances.get(flowDefinitionId);
+        return flowDefinitionsToInstances.getOrDefault(flowDefinitionId, new HashSet<>()).stream().collect(Collectors.toSet());
     }
 
     @Override
@@ -94,7 +95,7 @@ public class InMemoryStreameshStore implements StreameshStore {
 
     @Override
     public Set<TaskDescriptor> getTasksByDefinition(String definitionId) {
-        return pipesToTasks.get(getDefinitionById(definitionId));
+        return pipesToTasks.getOrDefault(getDefinitionById(definitionId), new HashSet<>()).stream().collect(Collectors.toSet());
     }
 
     @Override

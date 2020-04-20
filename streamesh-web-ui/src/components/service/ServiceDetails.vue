@@ -71,8 +71,8 @@
       >Delete</el-button>
     </el-card>
 
-    <el-dialog title="Tips" :visible.sync="dialogVisible" width="30%" >
-      <span>This is a message</span>
+    <el-dialog title="Do you really want to delete this service?" :visible.sync="dialogVisible" width="30%" >
+      <span>All the associated flows/tasks will be killed.</span>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">Cancel</el-button>
         <el-button type="danger" @click="confirmDeletion()">Delete</el-button>
@@ -125,7 +125,7 @@ export default {
     },
     confirmDeletion: function() {
       var component = this
-      fetch('http://localhost:8081/api/v1/definitions' + this.id, {
+      fetch('http://localhost:8081/api/v1/definitions/' + this.id, {
         method: 'DELETE'
       }).then(() => {
         component.$router.push({ path: `/services` });

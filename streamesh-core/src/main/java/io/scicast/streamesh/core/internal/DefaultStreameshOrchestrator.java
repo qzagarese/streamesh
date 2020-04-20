@@ -115,19 +115,22 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
         }
         verifyNoDependingDefinitions(definition);
         if (definition instanceof MicroPipe) {
-            streameshStore.getTasksByDefinition(id).stream()
-                    .map(task -> task.getId())
-                    .forEach(taskId -> {
-                        this.killTask(taskId);
-                        streameshStore.removeTask(taskId);
-                    });
+            Set<TaskDescriptor> tasksByDefinition = streameshStore.getTasksByDefinition(id);
+            for (TaskDescriptor task : tasksByDefinition) {
+                this.killTask(task.getId());
+                streameshStore.removeTask(task.getId());
+            }
+
         } else {
-            streameshStore.getFlowInstancesByDefinition(id).stream()
-                    .map(fi -> fi.getId())
-                    .forEach(flowInstanceId -> {
-                        this.killFlowInstance(flowInstanceId);
-                        streameshStore.removeFlowInstance(flowInstanceId);
-                    });
+            Set<FlowInstance> flowInstancesByDefinition = streameshStore.getFlowInstancesByDefinition(id);
+            for (FlowInstance instance : flowInstancesByDefinition) {
+                try {
+                    this.killFlowInstance(instance.getId());
+                    streameshStore.removeFlowInstance(instance.getId());
+                } catch (NotFoundException nfe) {
+                    logger.info(String.format("Flow instance %s has already been deleted.", instance.getId()));
+                }
+            }
 
         }
         streameshStore.removeDefinition(id);
@@ -152,7 +155,7 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
                 .collect(Collectors.toSet());
         if (!dependingDefinitions.isEmpty()) {
             throw new IllegalStateException(String.format("Cannot remove service %s. The following services depend on it: \n%s." +
-                            "Remove them first.",
+                            "\nRemove them first.",
                     definition.getName(),
                     dependingDefinitions.stream()
                             .map(name -> "- " + name)
@@ -224,7 +227,10 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
                 .filter(node -> node instanceof ExecutablePipeRuntimeNode)
                 .forEach(node -> {
                     if (node instanceof MicroPipeRuntimeNode) {
-                        killTask(((MicroPipeRuntimeNode) node).getTaskId());
+                        String taskId = ((MicroPipeRuntimeNode) node).getTaskId();
+                        if (taskId != null) {
+                            killTask(taskId);
+                        }
                     } else {
                         killFlowInstance(((FlowReferenceRuntimeNode)node).getInstanceId());
                     }

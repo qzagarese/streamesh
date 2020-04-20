@@ -102,10 +102,14 @@ public class DockerBasedOrchestrationDriver implements OrchestrationDriver {
     @Override
     public void killTask(String taskId, StreameshContext context) {
         TaskDescriptor descriptor = context.getStore().getTaskById(taskId);
-        if (descriptor ==null) {
+        if (descriptor == null) {
             throw new NotFoundException("Cannot find the task specified by id " + taskId);
         }
-        client.removeContainerCmd(descriptor.getContainerId()).withForce(true).exec();
+        try {
+            client.removeContainerCmd(descriptor.getContainerId()).withForce(true).exec();
+        } catch (com.github.dockerjava.api.exception.NotFoundException e) {
+            logger.info(String.format("Container %s has already been deleted.", descriptor.getContainerId()));
+        }
         context.getStore().updateTask(descriptor.getServiceId(), descriptor.withStatus(TaskDescriptor.TaskStatus.KILLED));
     }
 
