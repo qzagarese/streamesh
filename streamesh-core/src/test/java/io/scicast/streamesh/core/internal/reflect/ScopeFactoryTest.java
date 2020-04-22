@@ -115,27 +115,7 @@ public class ScopeFactoryTest {
 
     }
 
-    @Test
-    public void testScopeForSubFlow() throws IOException {
-        FlowDefinition airbnb = loadDefinition("/flows/airbnb-flow.yml", FlowDefinition.class);
-        when(streameshStore.getDefinitionByName("airbnb-ny-properties")).thenReturn(airbnb);
 
-        FlowDefinition definition = loadDefinition("/flows/recursive-airbnb-flow.yml", FlowDefinition.class);
-        ScopeFactory factory = ScopeFactory.builder()
-                .streameshContext(context)
-                .build();
-
-        Scope scope = factory.create(definition);
-        FlowGraph graph = new FlowGraphBuilder().build(scope);
-        System.out.println(graph.toDot());
-
-
-//        jsonMapper.enable(SerializationFeature.INDENT_OUTPUT)
-//                .setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-//                .writerFor(Scope.class).writeValue(System.out, scope);
-
-
-    }
 
     private void explainScope(Scope currentScope, List<String> basePath) {
         String stringifiedBasePath = basePath.stream().collect(Collectors.joining("/"));

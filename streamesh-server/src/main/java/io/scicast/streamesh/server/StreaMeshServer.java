@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 import java.io.IOException;
+import java.net.NetworkInterface;
 
 @SpringBootApplication
 public class StreaMeshServer {
@@ -14,7 +15,10 @@ public class StreaMeshServer {
     private static String serverAddress;
 
     public static void main(String[] args) throws IOException {
-        serverAddress = System.getProperty(StartupUtils.STREAMESH_SERVER_ADDRESS_PROPERTY, StartupUtils.selectAddress());
+        serverAddress = System.getProperty(StartupUtils.STREAMESH_SERVER_ADDRESS_PROPERTY);
+        if (serverAddress == null) {
+            serverAddress = StartupUtils.selectAddress();
+        }
         SpringApplication.run(io.scicast.streamesh.server.StreaMeshServer.class, args);
     }
 

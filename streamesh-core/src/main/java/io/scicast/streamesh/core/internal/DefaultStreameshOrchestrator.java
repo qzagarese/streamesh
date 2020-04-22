@@ -120,12 +120,13 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
                 this.killTask(task.getId());
                 streameshStore.removeTask(task.getId());
             }
-
         } else {
             Set<FlowInstance> flowInstancesByDefinition = streameshStore.getFlowInstancesByDefinition(id);
             for (FlowInstance instance : flowInstancesByDefinition) {
                 try {
                     this.killFlowInstance(instance.getId());
+                    streameshStore.getTasksByFlowInstance(instance.getId()).stream()
+                            .forEach(task -> streameshStore.removeTask(task.getId()));
                     streameshStore.removeFlowInstance(instance.getId());
                 } catch (NotFoundException nfe) {
                     logger.info(String.format("Flow instance %s has already been deleted.", instance.getId()));

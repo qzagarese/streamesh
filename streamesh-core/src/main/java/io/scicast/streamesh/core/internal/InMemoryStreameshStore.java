@@ -13,14 +13,14 @@ import java.util.stream.Collectors;
 
 public class InMemoryStreameshStore implements StreameshStore {
 
-    private Map<String, Definition> definitions = new ConcurrentHashMap<>();
-    private Map<String, Definition> definitionsByName = new ConcurrentHashMap<>();
+    private Map<String, Definition> definitions = new HashMap<>();
+    private Map<String, Definition> definitionsByName = new HashMap<>();
 
-    private Map<String, FlowInstance> flowInstances = new ConcurrentHashMap<>();
-    private Map<String, Set<FlowInstance>> flowDefinitionsToInstances = new ConcurrentHashMap<>();
+    private Map<String, FlowInstance> flowInstances = new HashMap<>();
+    private Map<String, Set<FlowInstance>> flowDefinitionsToInstances = new HashMap<>();
 
-    private Map<String, TaskDescriptor> tasks = new ConcurrentHashMap<>();
-    private Map<MicroPipe, Set<TaskDescriptor>> pipesToTasks = new ConcurrentHashMap<>();
+    private Map<String, TaskDescriptor> tasks = new HashMap<>();
+    private Map<MicroPipe, Set<TaskDescriptor>> pipesToTasks = new HashMap<>();
 
 
     @Override
@@ -56,11 +56,15 @@ public class InMemoryStreameshStore implements StreameshStore {
 
     @Override
     public Set<TaskDescriptor> getTasksByFlowInstance(String flowInstanceId) {
-        return flowInstances.get(flowInstanceId).getExecutionGraph().getNodes().stream()
-                .filter(node -> node instanceof MicroPipeRuntimeNode)
-                .map(node -> (MicroPipeRuntimeNode) node)
-                .map(node -> tasks.get(node.getTaskId()))
-                .collect(Collectors.toSet());
+        FlowInstance flowInstance = flowInstances.get(flowInstanceId);
+        if (flowInstance != null) {
+            return flowInstance.getExecutionGraph().getNodes().stream()
+                    .filter(node -> node instanceof MicroPipeRuntimeNode)
+                    .map(node -> (MicroPipeRuntimeNode) node)
+                    .map(node -> tasks.get(node.getTaskId()))
+                    .collect(Collectors.toSet());
+        }
+        return new HashSet<>();
     }
 
     @Override
