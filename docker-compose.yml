@@ -1,7 +1,7 @@
 version: "2.2"
 services:
   streamesh-server:
-    image: "streamesh-server:latest"
+    image: "streamesh-server"
     container_name: streamesh-server
     network_mode: bridge
     volumes:
@@ -12,7 +12,7 @@ services:
   streamesh-web-ui:
     depends_on:
       - streamesh-server
-    image: "streamesh-web-ui:latest"
+    image: "streamesh-web-ui"
     network_mode: bridge
     links:
       - streamesh-server:streamesh-server
