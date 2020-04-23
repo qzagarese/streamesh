@@ -1,0 +1,20 @@
+version: "2.2"
+services:
+  streamesh-server:
+    image: "streamesh-server:latest"
+    container_name: streamesh-server
+    network_mode: bridge
+    volumes:
+      - "/tmp:/tmp"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    environment:
+      JAVA_OPTS: "-Dstreamesh.server.network.interface=eth0"
+  streamesh-web-ui:
+    depends_on:
+      - streamesh-server
+    image: "streamesh-web-ui:latest"
+    network_mode: bridge
+    links:
+      - streamesh-server:streamesh-server
+    ports:
+    - "8081:80"
