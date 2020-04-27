@@ -1,7 +1,12 @@
 package io.scicast.streamesh.core;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.scicast.streamesh.core.internal.reflect.LocallyScoped;
 import lombok.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Builder
 @Getter

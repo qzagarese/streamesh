@@ -1,0 +1,91 @@
+type: flow
+name: airbnb-ny-properties
+
+input:
+  - name: manhattan-bucket
+  - name: manhattan-file
+  - name: others-bucket
+  - name: others-file
+
+
+output:
+  - name: brooklyn-and-manhattan
+    target: ${b-and-m-plotter.output.brooklyn-and-manhattan}
+  - name: all-properties
+    target: ${all-in-one-plotter.output.full-plot}
+
+
+pipes:
+  - type: simple-db-reader
+    as: db-reader
+    output:
+      - target: ${data}
+        as: brooklyn-properties
+
+  - type: s3-downloader
+    as: s3-manhattan
+    input:
+      - target: ${bucket}
+        value: ${flow.input.manhattan-bucket}
+#        value: ic-demo-streamesh
+      - target: ${filename}
+        value: ${flow.input.manhattan-file}
+#        value: data/AB_NYC_2019_Manhattan.csv
+    output:
+      - target: ${output}
+        as: manhattan-properties
+
+  - type: s3-downloader
+    as: s3-others
+    input:
+      - target: ${bucket}
+        value: ${flow.input.others-bucket}
+#        value: ic-demo-streamesh
+      - target: ${filename}
+        value: ${flow.input.others-file}
+#        value: data/AB_NYC_2019_rest.csv
+    output:
+      - target: ${output}
+        as: other-properties
+
+  - type: http-data-merger
+    as: b-and-m-merger
+    input:
+      - target: ${urls}
+        value: ${db-reader.output.brooklyn-properties}
+      - target: ${urls}
+        value: ${s3-manhattan.output.manhattan-properties}
+    output:
+      - target: ${output}
+        as: brooklyn-and-manhattan
+
+  - type: python-plotter
+    as: b-and-m-plotter
+    input:
+      - target: ${dataset}
+        value: ${b-and-m-merger.output.brooklyn-and-manhattan}
+    output:
+      - target: ${plot}
+        as: brooklyn-and-manhattan
+
+  - type: http-data-merger
+    as: all-props-merger
+    input:
+      - target: ${urls}
+        value: ${b-and-m-merger.output.brooklyn-and-manhattan}
+      - target: ${urls}
+        value: ${s3-others.output.other-properties}
+    output:
+      - target: ${output}
+        as: all-properties
+
+  - type: python-plotter
+    as: all-in-one-plotter
+    input:
+      - target: ${dataset}
+        value: ${all-props-merger.output.all-properties}
+    output:
+      - target: ${plot}
+        as: full-plot
+
+

@@ -195,12 +195,14 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
             throw new IllegalArgumentException("Cannot schedule tasks for definitions of type " + definition.getType());
         }
         MicroPipe pipe = (MicroPipe) definition;
+        validateTaskInput(input, pipe.getInputMapping());
         TaskDescriptor descriptor = driver.scheduleTask(
                 TaskExecutionIntent.builder()
                     .image(pipe.getImage())
                     .taskId(taskId)
-                    .command(buildCommand(pipe, input))
+                    .taskInput(pipe.getInputMapping())
                     .taskOutputs(pipe.getOutputMapping())
+                    .runtimeInput(input)
                     .build(),
                 event -> {
                     updateState(pipe, event);
@@ -283,10 +285,9 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
                         .withServiceName(definition.getName()));
     }
 
-    private String buildCommand(MicroPipe definition, Map<?, ?> input) {
-        TaskInput inputMapping = definition.getInputMapping();
-        String params = inputMapping.getParameters().stream()
-                .map(p -> {
+    private void validateTaskInput(Map<?, ?> input, TaskInput inputMapping) {
+        inputMapping.getParameters().stream()
+                .forEach(p -> {
                     Object o = input.get(p.getName());
                     if (!p.isOptional() && o == null) {
                         throw new MissingParameterException(String.format("Parameter %s is mandatory.", p.getName()));
@@ -294,17 +295,7 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
                     if (p.isRepeatable() && (!List.class.isAssignableFrom(o.getClass()))) {
                         throw new InvalidCmdParameterException(String.format("Parameter %s must be provided as an array", p.getName()));
                     }
-                    if (!p.isRepeatable()) {
-                        String value = (String) o;
-                        return p.getInternalName().trim() + " " + value.trim();
-                    } else {
-                        List<String> value = (List<String>) o;
-                        return value.stream()
-                                .map(v -> p.getInternalName().trim() + " " + v.trim())
-                                .collect(Collectors.joining(" "));
-                    }
-                }).collect(Collectors.joining(" "));
-        return (inputMapping.getBaseCmd().trim() + " " + params.trim()).trim();
+                });
     }
 
     public InputStream getTaskOutput(String taskDescriptorId, String outputName) {

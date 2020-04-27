@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.Map;
 
 @Builder
 @Getter
@@ -11,7 +12,8 @@ public class TaskExecutionIntent {
 
     private String taskId;
     private String image;
-    private String command;
+    private TaskInput taskInput;
     private List<TaskOutput> taskOutputs;
+    private Map<?, ?> runtimeInput;
 
 }
