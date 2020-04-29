@@ -1,3 +1,4 @@
+type: micropipe
 name: slow-printer
 image: "slow-printer:latest"
 inputMapping:
