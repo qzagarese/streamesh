@@ -15,11 +15,11 @@ You need the following to build and run Streamesh:
 
 Firstly, clone this repo.
 
-`git clone git@github.com:scicast-io/streamesh.git`
+`git clone git@github.com:streamesh/streamesh.git`
 
 Or
 
-`git clone https://github.com/scicast-io/streamesh.git`
+`git clone https://github.com/streamesh/streamesh.git`
 
 From inside the `streamesh` directory, run the following to build the server (this might take a minute or two):
 
