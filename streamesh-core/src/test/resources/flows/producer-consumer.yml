@@ -1,0 +1,23 @@
+type: flow
+name: producer-consumer
+
+output:
+  - name: double-value
+    target: ${consumer.output.output}
+
+pipes:
+  - as: slow-printer
+    type: slow-printer
+    output:
+      - as: output
+        target: ${output}
+
+  - as: consumer
+    type: simple-consumer
+    input:
+      - target: ${source}
+        value: ${slow-printer.output.output}
+        usable: WHILE_BEING_PRODUCED
+    output:
+      - target: ${output}
+        as: output

@@ -12,7 +12,7 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 
 @SpringBootApplication
-public class StreaMeshServer {
+public class StreameshServer {
 
     private static final String STREAMESH_SERVER_NETWORK_INTERFACE = "streamesh.server.network.interface";
     private static String serverAddress;
@@ -33,7 +33,7 @@ public class StreaMeshServer {
         if (serverAddress == null) {
             serverAddress = StartupUtils.selectAddress();
         }
-        SpringApplication.run(io.scicast.streamesh.server.StreaMeshServer.class, args);
+        SpringApplication.run(StreameshServer.class, args);
     }
 
     @Bean

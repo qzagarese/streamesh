@@ -19,6 +19,10 @@ public abstract class RuntimeNode implements NodeObserver {
         observers.add(observer);
     }
 
+    public boolean removeObserver(NodeObserver observer) {
+        return observers.remove(observer);
+    }
+
     public void notifyObservers() {
         observers.forEach(observer -> observer.notify(this));
     }

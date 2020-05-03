@@ -4,23 +4,32 @@ import io.scicast.streamesh.core.*;
 import io.scicast.streamesh.core.exception.InvalidCmdParameterException;
 import io.scicast.streamesh.core.exception.MissingParameterException;
 import io.scicast.streamesh.core.flow.FlowDefinition;
+import io.scicast.streamesh.core.flow.FlowGraph;
 import io.scicast.streamesh.core.flow.FlowInstance;
 import io.scicast.streamesh.core.flow.FlowParameter;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 @Getter
 public class LocalFlowExecutor implements FlowExecutor {
+
+    private Logger logger = Logger.getLogger(getClass().getName());
 
     private final StreameshContext context;
     private String flowInstanceId;
@@ -33,13 +42,13 @@ public class LocalFlowExecutor implements FlowExecutor {
         this.flowInstanceId = flowInstanceId;
 
         FlowInstance instance = FlowInstance.builder()
-            .definitionId(flow.getId())
-            .flowName(flow.getName())
-            .id(flowInstanceId)
-            .executionGraph(runtimeGraph)
-            .started(LocalDateTime.now())
-            .status(FlowInstance.FlowInstanceStatus.LAUNCHING)
-            .build();
+                .definitionId(flow.getId())
+                .flowName(flow.getName())
+                .id(flowInstanceId)
+                .executionGraph(runtimeGraph)
+                .started(LocalDateTime.now())
+                .status(FlowInstance.FlowInstanceStatus.LAUNCHING)
+                .build();
         context.getStore().storeFlowInstance(instance);
         init(runtimeGraph, input);
         instance = instance.withStatus(FlowInstance.FlowInstanceStatus.RUNNING);
@@ -82,10 +91,10 @@ public class LocalFlowExecutor implements FlowExecutor {
                 FlowExecutionEvent<?> event = FlowExecutionEvent.builder()
                         .type(FlowExecutionEvent.EventType.OUTPUT_AVAILABILITY)
                         .descriptor(OutputAvailabilityDescriptor.builder()
-                            .flowInstanceId(flowInstanceId)
-                            .nodeName(node.getName())
-                            .runtimeDataValue(node.getValue())
-                            .build())
+                                .executableId(flowInstanceId)
+                                .nodeName(node.getName())
+                                .runtimeDataValue(node.getValue())
+                                .build())
                         .build();
                 upstreamFlowHandler.accept(event);
             }
@@ -100,12 +109,47 @@ public class LocalFlowExecutor implements FlowExecutor {
             String executableId = node.getName() + "-" + UUID.randomUUID().toString();
             if (node instanceof MicroPipeRuntimeNode) {
                 ((MicroPipeRuntimeNode) node).setTaskId(executableId);
-                orchestrator.scheduleTask(node.getDefinitionId(),executableId, node.getPipeInput(), this::onTaskExecutionEvent);
-            } else if (node instanceof FlowReferenceRuntimeNode){
+                orchestrator.scheduleTask(node.getDefinitionId(), executableId, node.getPipeInput(), this::onTaskExecutionEvent);
+                createTaskOutputListeners(executableId, node.getStaticGraphNode());
+            } else if (node instanceof FlowReferenceRuntimeNode) {
                 ((FlowReferenceRuntimeNode) node).setInstanceId(executableId);
                 orchestrator.scheduleFlow(node.getDefinitionId(), executableId, node.getPipeInput(), this::onFlowExecutionEvent);
             }
         });
+    }
+
+    private void createTaskOutputListeners(String executableId, FlowGraph.FlowNode staticGraphNode) {
+        MicroPipe microPipe = (MicroPipe) staticGraphNode.getValue();
+        ExecutorService svc = Executors.newFixedThreadPool(microPipe.getOutputMapping().size());
+        for (TaskOutput output : microPipe.getOutputMapping()) {
+            Runnable outputListener = () -> {
+                InputStream taskOutputStream = context.getOrchestrator().getTaskOutput(executableId, output.getName());
+                try {
+                    logger.info(String.format("Waiting to read from %s.", output.getName()));
+                    taskOutputStream.read(new byte[16]);
+                    logger.info(String.format("Read from %s.", output.getName()));
+                    taskOutputStream.close();
+                    this.onTaskExecutionEvent(TaskExecutionEvent.builder()
+                            .type(TaskExecutionEvent.EventType.OUTPUT_AVAILABILITY)
+                            .descriptor(OutputAvailabilityDescriptor.builder()
+                                    .executableId(executableId)
+                                    .runtimeDataValue(RuntimeDataValue.builder()
+                                            .parts(Stream.of(RuntimeDataValue.RuntimeDataValuePart.builder()
+                                                    .refName(output.getName())
+                                                    .state(RuntimeDataValue.DataState.FLOWING)
+                                                    .value(context.getServerInfo().getBaseUrl() + "/tasks/" + executableId + "/" + output.getName())
+                                                    .build())
+                                                    .collect(Collectors.toSet()))
+                                            .build())
+                                    .build())
+                            .build());
+                } catch (IOException e) {
+                    logger.severe(String.format("Could not read data from output %s produced by task %s", output.getName(), executableId));
+                }
+            };
+            svc.submit(outputListener);
+        }
+
     }
 
     private void onFlowExecutionEvent(FlowExecutionEvent<?> event) {
@@ -134,7 +178,7 @@ public class LocalFlowExecutor implements FlowExecutor {
         return instance.getExecutionGraph().getNodes().stream()
                 .filter(node -> node instanceof FlowReferenceRuntimeNode)
                 .map(node -> (FlowReferenceRuntimeNode) node)
-                .filter(node -> descriptor.getFlowInstanceId().equals(node.getInstanceId()))
+                .filter(node -> descriptor.getExecutableId().equals(node.getInstanceId()))
                 .findFirst()
                 .orElse(null);
     }
@@ -145,10 +189,15 @@ public class LocalFlowExecutor implements FlowExecutor {
         if (event.getType().equals(TaskExecutionEvent.EventType.CONTAINER_STATE_CHANGE)) {
             TaskDescriptor descriptor = (TaskDescriptor) event.getDescriptor();
             if (descriptor.getStatus().equals(TaskDescriptor.TaskStatus.COMPLETE)) {
-                MicroPipeRuntimeNode targetNode = getTargetMicroPipeNode(instance, descriptor);
+                MicroPipeRuntimeNode targetNode = getTargetMicroPipeNode(instance, descriptor.getId());
                 updateTargetNode(descriptor, targetNode);
                 stateUpdated = true;
             }
+        } else {
+            OutputAvailabilityDescriptor descriptor = (OutputAvailabilityDescriptor) event.getDescriptor();
+            MicroPipeRuntimeNode targetNode = getTargetMicroPipeNode(instance, descriptor.getExecutableId());
+            targetNode.update(descriptor.getRuntimeDataValue());
+            stateUpdated = true;
         }
 
         if (stateUpdated) {
@@ -164,7 +213,8 @@ public class LocalFlowExecutor implements FlowExecutor {
     }
 
     private void updateTargetNode(TaskDescriptor descriptor, MicroPipeRuntimeNode targetNode) {
-        Set<RuntimeDataValue.RuntimeDataValuePart> parts = ((MicroPipe) targetNode.getStaticGraphNode().getValue()).getOutputMapping().stream()
+        Set<RuntimeDataValue.RuntimeDataValuePart> parts = ((MicroPipe) targetNode.getStaticGraphNode().getValue())
+                .getOutputMapping().stream()
                 .map(taskOutput -> RuntimeDataValue.RuntimeDataValuePart.builder()
                         .refName(taskOutput.getName())
                         .state(RuntimeDataValue.DataState.COMPLETE)
@@ -173,18 +223,18 @@ public class LocalFlowExecutor implements FlowExecutor {
                 .collect(Collectors.toSet());
 
         targetNode.update(RuntimeDataValue.builder()
-            .parts(parts)
-            .build());
+                .parts(parts)
+                .build());
     }
 
-    private MicroPipeRuntimeNode getTargetMicroPipeNode(FlowInstance instance, TaskDescriptor descriptor) {
+    private MicroPipeRuntimeNode getTargetMicroPipeNode(FlowInstance instance, String taskId) {
         return instance.getExecutionGraph().getNodes().stream()
-            .filter(n -> n instanceof MicroPipeRuntimeNode)
-            .map(n -> (MicroPipeRuntimeNode) n)
-            .filter(n -> descriptor.getId().equals(n.getTaskId()))
-            .findFirst()
-            .orElse(null);
-}
+                .filter(n -> n instanceof MicroPipeRuntimeNode)
+                .map(n -> (MicroPipeRuntimeNode) n)
+                .filter(n -> taskId.equals(n.getTaskId()))
+                .findFirst()
+                .orElse(null);
+    }
 
     private RuntimeDataValue buildRuntimeDataValue(FlowParameter parameterSpec, Object o) {
         if (!parameterSpec.isOptional() && o == null) {
@@ -202,14 +252,14 @@ public class LocalFlowExecutor implements FlowExecutor {
                     .refName(parameterSpec.getName())
                     .value((String) o)
                     .build())
-                .collect(Collectors.toSet());
+                    .collect(Collectors.toSet());
         } else {
             parts = ((List<String>) o).stream()
                     .map(s -> RuntimeDataValue.RuntimeDataValuePart.builder()
-                        .value(s)
-                        .refName(parameterSpec.getName())
-                        .state(RuntimeDataValue.DataState.COMPLETE)
-                        .build())
+                            .value(s)
+                            .refName(parameterSpec.getName())
+                            .state(RuntimeDataValue.DataState.COMPLETE)
+                            .build())
                     .collect(Collectors.toSet());
         }
         return builder.parts(parts)

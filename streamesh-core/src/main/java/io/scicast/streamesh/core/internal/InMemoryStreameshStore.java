@@ -1,13 +1,11 @@
 package io.scicast.streamesh.core.internal;
 
 import io.scicast.streamesh.core.*;
+import io.scicast.streamesh.core.exception.NotFoundException;
 import io.scicast.streamesh.core.flow.FlowInstance;
 import io.scicast.streamesh.core.flow.execution.MicroPipeRuntimeNode;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -46,7 +44,8 @@ public class InMemoryStreameshStore implements StreameshStore {
 
     @Override
     public FlowInstance getFlowInstance(String instanceId) {
-        return flowInstances.get(instanceId);
+        return Optional.of(flowInstances.get(instanceId))
+                .orElseThrow(() -> new NotFoundException("Cannot find flow instance with id " + instanceId));
     }
 
     @Override
@@ -103,8 +102,8 @@ public class InMemoryStreameshStore implements StreameshStore {
     }
 
     @Override
-    public TaskDescriptor getTaskById(String jobId) {
-        return tasks.get(jobId);
+    public TaskDescriptor getTaskById(String taskId) {
+        return Optional.of(tasks.get(taskId)).orElseThrow(() -> new NotFoundException("Cannot find task with id " + taskId));
     }
 
     @Override

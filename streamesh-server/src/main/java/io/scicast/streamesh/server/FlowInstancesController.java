@@ -11,11 +11,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 @RestController
 public class FlowInstancesController {
@@ -29,6 +32,8 @@ public class FlowInstancesController {
 
     @Value("${server.servlet.context-path}")
     private String apiPath;
+
+    private Logger logger = Logger.getLogger(getClass().getName());
 
     @PostMapping("/definitions/{definitionId}/instances")
     public ResponseEntity<Map<String, Object>> postFlowInstance(@PathVariable("definitionId") String definitionId,
@@ -53,26 +58,23 @@ public class FlowInstancesController {
     public void getOutput(@PathVariable("flowInstanceId") String flowInstanceId,
                                   @PathVariable("outputName") String outputName,
                                   HttpServletResponse response) throws IOException {
-        FlowInstance instance = orchestrator.getFlowInstance(flowInstanceId);
-        FlowOutputRuntimeNode outputNode = instance.getExecutionGraph().getOutputNodes().stream()
-                .filter(node -> outputName.equals(((FlowOutput) node.getStaticGraphNode().getValue()).getName()))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException(String.format("Cannot find output %s for the specified flow.", outputName)));
-
-        if (outputNode.getValue() != null) {
-            String value = outputNode.getValue().getParts().stream()
-                    .findFirst()
-                    .map(part -> part.getValue())
-                    .orElse(null);
-            if (value != null) {
-                value = value.substring(value.indexOf(TASKS_PATH) + TASKS_PATH.length());
-                String[] parameters = value.split("/");
-                if (parameters.length == 2) {
-                    tasksController.getOutput(parameters[0], parameters[1], response);
-                }
-
+        InputStream is = orchestrator.getFlowOutput(flowInstanceId, outputName);
+        ServletOutputStream os = response.getOutputStream();
+        byte[] buf = new byte[100 * 1024];
+        int b = is.read(buf);
+        while(b != -1) {
+            os.write(buf, 0, b);
+            try {
+                os.flush();
+                b = is.read(buf);
+            } catch (IOException e) {
+                os.close();
+                b = -1;
+                logger.info(String.format("Output request for flow id %s has been cancelled by the client.", flowInstanceId));
             }
         }
+        os.close();
+        response.flushBuffer();
 
     }
 

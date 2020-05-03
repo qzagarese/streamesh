@@ -1,6 +1,5 @@
 package io.scicast.streamesh.core.flow.execution;
 
-import io.scicast.streamesh.core.MicroPipe;
 import io.scicast.streamesh.core.flow.FlowGraph;
 import lombok.Getter;
 import lombok.Setter;

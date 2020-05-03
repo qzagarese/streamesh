@@ -9,7 +9,10 @@ import java.util.stream.Stream;
 
 public class SlowPrinter {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
+
+        Thread.sleep(20000);
+
         BufferedWriter bw = new BufferedWriter( new FileWriter("/tmp/output.txt"));
 
         IntStream.range(0, 600).forEachOrdered(i -> {
