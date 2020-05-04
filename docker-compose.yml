@@ -5,7 +5,7 @@ services:
     container_name: streamesh-server
     network_mode: bridge
     volumes:
-      - "/tmp:/tmp:rw,shared"
+      - "/tmp:/tmp:rw"
       - "/var/run/docker.sock:/var/run/docker.sock"
     environment:
       JAVA_OPTS: "-Dstreamesh.server.network.interface=eth0"
