@@ -1,6 +1,10 @@
 type: flow
 name: producer-consumer
 
+input:
+  - name: howMany
+  - name: millisBetweenNumbers
+
 output:
   - name: double-value
     target: ${consumer.output.output}
@@ -8,6 +12,11 @@ output:
 pipes:
   - as: slow-printer
     type: slow-printer
+    input:
+      - target: ${howMany}
+        value: ${flow.input.howMany}
+      - target: ${millisBetweenNumbers}
+        value: ${flow.input.millisBetweenNumbers}
     output:
       - as: output
         target: ${output}

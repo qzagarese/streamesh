@@ -51,7 +51,16 @@ public abstract class ExecutablePipeRuntimeNode extends UpdatableRuntimeNode {
     @Override
     public void update(RuntimeDataValue value) {
         Set<RuntimeDataValue.RuntimeDataValuePart> toBeUpdated = value.getParts().stream()
-                .filter(v -> this.value.getParts().contains(v))
+                .filter(v -> {
+                    if (this.value.getParts().contains(v)) {
+                        RuntimeDataValue.RuntimeDataValuePart currentPartValue = this.value.getParts().stream()
+                            .filter(part -> part.equals(v))
+                            .findFirst()
+                            .orElse(null);
+                        return currentPartValue != null && !currentPartValue.getState().equals(RuntimeDataValue.DataState.COMPLETE);
+                    }
+                    return false;
+                })
                 .collect(Collectors.toSet());
         this.value.getParts().removeAll(toBeUpdated);
         this.value.getParts().addAll(value.getParts());

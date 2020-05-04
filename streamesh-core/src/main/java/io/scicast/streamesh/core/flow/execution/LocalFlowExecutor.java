@@ -17,9 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -52,11 +50,23 @@ public class LocalFlowExecutor implements FlowExecutor {
         context.getStore().storeFlowInstance(instance);
         init(runtimeGraph, input);
         instance = instance.withStatus(FlowInstance.FlowInstanceStatus.RUNNING);
-        if (allDone(instance)) {
-            instance = instance.withStatus(FlowInstance.FlowInstanceStatus.COMPLETE)
-                    .withCompleted(LocalDateTime.now());
 
-        }
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
+            try {
+                FlowInstance flowInstance = context.getStore().getFlowInstance(flowInstanceId);
+                if (allDone(flowInstance)) {
+                    flowInstance = flowInstance.withStatus(FlowInstance.FlowInstanceStatus.COMPLETE)
+                            .withCompleted(LocalDateTime.now());
+                    context.getStore().storeFlowInstance(flowInstance);
+                    scheduledExecutorService.shutdownNow();
+                }
+            } catch (Exception e) {
+                logger.warning(String.format("A fault occurred while checking for the termination of flow instance %s: %s",
+                        flowInstanceId, e.getMessage()));
+            }
+        }, 5000, 2000, TimeUnit.MILLISECONDS);
+
         context.getStore().storeFlowInstance(instance);
         return instance;
     }
@@ -165,10 +175,10 @@ public class LocalFlowExecutor implements FlowExecutor {
         if (stateUpdated) {
             executeNodes(instance.getExecutionGraph().getExecutableNodes());
             checkFlowOutput(instance.getExecutionGraph().getOutputNodes());
-            if (allDone(instance)) {
-                instance = instance.withStatus(FlowInstance.FlowInstanceStatus.COMPLETE)
-                        .withCompleted(LocalDateTime.now());
-            }
+//            if (allDone(instance)) {
+//                instance = instance.withStatus(FlowInstance.FlowInstanceStatus.COMPLETE)
+//                        .withCompleted(LocalDateTime.now());
+//            }
             context.getStore().storeFlowInstance(instance);
         }
 
@@ -203,10 +213,10 @@ public class LocalFlowExecutor implements FlowExecutor {
         if (stateUpdated) {
             executeNodes(instance.getExecutionGraph().getExecutableNodes());
             checkFlowOutput(instance.getExecutionGraph().getOutputNodes());
-            if (allDone(instance)) {
-                instance = instance.withStatus(FlowInstance.FlowInstanceStatus.COMPLETE)
-                        .withCompleted(LocalDateTime.now());
-            }
+//            if (allDone(instance)) {
+//                instance = instance.withStatus(FlowInstance.FlowInstanceStatus.COMPLETE)
+//                        .withCompleted(LocalDateTime.now());
+//            }
             context.getStore().storeFlowInstance(instance);
         }
 
