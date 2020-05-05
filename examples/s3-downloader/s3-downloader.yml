@@ -6,9 +6,12 @@ inputMapping:
   parameters:
     - name: bucket
       internalName: --bucket
-      optional: true
     - name: filename
       internalName: --file
+    - name: accessKey
+      internalName: --accessKey
+    - name: secretKey
+      internalName: --secretKey
 outputMapping:
   - outputDir: /tmp
     fileNamePattern: data.csv
