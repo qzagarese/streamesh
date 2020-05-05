@@ -6,6 +6,8 @@ input:
   - name: manhattan-file
   - name: others-bucket
   - name: others-file
+  - name: accessKey
+  - name: secretKey
 
 
 output:
@@ -31,6 +33,10 @@ pipes:
       - target: ${filename}
         value: ${flow.input.manhattan-file}
 #        value: data/AB_NYC_2019_Manhattan.csv
+      - target: ${accessKey}
+        value: ${flow.input.accessKey}
+      - target: ${secretKey}
+        value: ${flow.input.secretKey}
     output:
       - target: ${output}
         as: manhattan-properties
@@ -44,6 +50,10 @@ pipes:
       - target: ${filename}
         value: ${flow.input.others-file}
 #        value: data/AB_NYC_2019_rest.csv
+      - target: ${accessKey}
+        value: ${flow.input.accessKey}
+      - target: ${secretKey}
+        value: ${flow.input.secretKey}
     output:
       - target: ${output}
         as: other-properties

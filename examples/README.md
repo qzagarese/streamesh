@@ -50,3 +50,5 @@ From the services list, press `Run` on the flow item and provide the following i
 - manhattan-file -> data/AB_NYC_2019_Manhattan.csv
 - others-bucket -> ic-demo-streamesh
 - others-file -> data/AB_NYC_2019_rest.csv
+
+You can see a video of this demo running [here](https://www.youtube.com/watch?v=nlu9xmIURKU)

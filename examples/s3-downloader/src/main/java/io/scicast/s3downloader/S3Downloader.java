@@ -16,9 +16,28 @@ import java.io.*;
 public class S3Downloader {
 
     public static void main(String[] args) throws IOException {
+
+        String accessKey = null;
+        String secretKey = null;
+        String bucket = null;
+        String filePath = null;
+
+        for(int i = 0; i < args.length; i++) {
+            if (args[i].equals("--accessKey")) {
+                accessKey = args[i + 1];
+            } else if (args[i].equals("--secretKey")) {
+                secretKey = args[i + 1];
+            } else if (args[i].equals("--bucket")) {
+                bucket = args[i + 1];
+            } else if (args[i].equals("--file")) {
+                filePath = args[i + 1];
+            }
+        }
+
+
         AWSCredentials credentials = new BasicAWSCredentials(
-                "AKIAW6BDIW7OUYFJHZ7P",
-                "6CPUU4mkUYAb5pYU3U9+DrF+sEYB4eoy1M40tVe7"
+                accessKey,
+                secretKey
         );
 
         AmazonS3 s3client = AmazonS3ClientBuilder
@@ -27,7 +46,7 @@ public class S3Downloader {
                 .withRegion(Regions.EU_WEST_2)
                 .build();
 
-        S3Object s3object = s3client.getObject(args[1], args[3]);
+        S3Object s3object = s3client.getObject(bucket, filePath);
         S3ObjectInputStream inputStream = s3object.getObjectContent();
 
         FileOutputStream fos = new FileOutputStream("/tmp/data.csv");
