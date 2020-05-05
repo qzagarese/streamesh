@@ -38,62 +38,66 @@ public class TailingInputStream extends InputStream {
     }
 
     private void init() {
-        producerTask = new Runnable() {
-            @Override
-            public void run() {
-                int blockNumber = 1;
-                RandomAccessFile raf = null;
-                int read = 0;
+        producerTask = () -> {
+            int blockNumber = 1;
+            RandomAccessFile raf = null;
+            int read = 0;
+            while (fileLength == 0) {
                 try {
                     raf = new RandomAccessFile(filePath, "r");
                     fileLength = raf.length();
                 } catch (Exception e) {
-                    throw new RuntimeException(String.format("Could not locate file %s", filePath));
-                }
-                while (fileLength > lastKnownPosition || !writeComplete) {
-                    byte[] buf = new byte[BLOCK_SIZE];
-                    try {
-                        raf = new RandomAccessFile(filePath, "r");
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(String.format("Could not locate file %s", filePath));
-                    }
-                    try {
-                        fileLength = raf.length();
-                        if (fileLength > lastKnownPosition) {
-                            raf.seek(lastKnownPosition);
-                            read = raf.read(buf);
-
-                            try {
-                                blocks.put(ReadResult.builder()
-                                        .buffer(buf)
-                                        .readBytes(read)
-                                        .blockNumber(blockNumber)
-                                        .build());
-                                blockNumber++;
-                            } catch (InterruptedException e) {
-                                logger.severe("Could not add buffer to the queue.");
-                            }
-                            lastKnownPosition = raf.getFilePointer();
-                        }
-                        raf.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    logger.fine(String.format("File %s is not yet available", filePath));
                 }
                 try {
-                    blocks.put(ReadResult.builder()
-                            .blockNumber(blockNumber)
-                            .readBytes(-1)
-                            .buffer(new byte[0])
-                            .build());
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    logger.severe("Could not add last buffer to the queue.");
+                    e.printStackTrace();
                 }
+            }
+            while (fileLength > lastKnownPosition || !writeComplete) {
+                byte[] buf = new byte[BLOCK_SIZE];
+                try {
+                    raf = new RandomAccessFile(filePath, "r");
+                } catch (FileNotFoundException e) {
+                    throw new RuntimeException(String.format("Could not locate file %s", filePath));
+                }
+                try {
+                    fileLength = raf.length();
+                    if (fileLength > lastKnownPosition) {
+                        raf.seek(lastKnownPosition);
+                        read = raf.read(buf);
+
+                        try {
+                            blocks.put(ReadResult.builder()
+                                    .buffer(buf)
+                                    .readBytes(read)
+                                    .blockNumber(blockNumber)
+                                    .build());
+                            blockNumber++;
+                        } catch (InterruptedException e) {
+                            logger.severe("Could not add buffer to the queue.");
+                        }
+                        lastKnownPosition = raf.getFilePointer();
+                    }
+                    raf.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                blocks.put(ReadResult.builder()
+                        .blockNumber(blockNumber)
+                        .readBytes(-1)
+                        .buffer(new byte[0])
+                        .build());
+            } catch (InterruptedException e) {
+                logger.severe("Could not add last buffer to the queue.");
             }
         };
         ExecutorService svc = Executors.newSingleThreadExecutor();

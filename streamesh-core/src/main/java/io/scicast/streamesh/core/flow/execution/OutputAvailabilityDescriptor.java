@@ -7,7 +7,7 @@ import lombok.Getter;
 @Builder
 public class OutputAvailabilityDescriptor {
 
-    private String flowInstanceId;
+    private String executableId;
     private String nodeName;
     private RuntimeDataValue runtimeDataValue;
 

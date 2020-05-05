@@ -3,6 +3,11 @@ name: slow-printer
 image: "slow-printer:latest"
 inputMapping:
   baseCmd: java -jar /usr/bin/slow-printer-1.0-SNAPSHOT.jar
+  parameters:
+    - name: howMany
+      internalName: --howMany
+    - name: millisBetweenNumbers
+      internalName: --millisBetweenNumbers
 outputMapping:
   - name: output
     outputDir: /tmp

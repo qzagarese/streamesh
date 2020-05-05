@@ -1,0 +1,32 @@
+type: flow
+name: producer-consumer
+
+input:
+  - name: howMany
+  - name: millisBetweenNumbers
+
+output:
+  - name: double-value
+    target: ${consumer.output.output}
+
+pipes:
+  - as: slow-printer
+    type: slow-printer
+    input:
+      - target: ${howMany}
+        value: ${flow.input.howMany}
+      - target: ${millisBetweenNumbers}
+        value: ${flow.input.millisBetweenNumbers}
+    output:
+      - as: output
+        target: ${output}
+
+  - as: consumer
+    type: simple-consumer
+    input:
+      - target: ${source}
+        value: ${slow-printer.output.output}
+        usable: WHILE_BEING_PRODUCED
+    output:
+      - target: ${output}
+        as: output

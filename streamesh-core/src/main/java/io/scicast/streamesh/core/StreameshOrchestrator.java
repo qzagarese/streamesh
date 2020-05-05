@@ -48,6 +48,8 @@ public interface StreameshOrchestrator {
 
     InputStream getTaskOutput(String taskDescriptorId, String outputName);
 
+    InputStream getFlowOutput(String flowInstanceId, String outputName);
+
     Set<FlowInstance> getAllFlowInstances();
 
     FlowInstance getFlowInstance(String flowInstanceId);

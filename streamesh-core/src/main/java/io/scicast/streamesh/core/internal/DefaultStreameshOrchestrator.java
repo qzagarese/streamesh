@@ -20,6 +20,8 @@ import java.util.stream.StreamSupport;
 public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
 
     private static final String BASE_API_PATH = "/api/v1";
+    private static final String TASKS_PATH = "/tasks/";
+
     private static final String STREAMESH_SERVER_HOST_NAME = "streamesh-server";
     private static final int PORT = 8080;
 
@@ -305,6 +307,31 @@ public class DefaultStreameshOrchestrator implements StreameshOrchestrator {
             stream = CryptoUtil.getCipherInputStream(stream, job.getKey());
         }
         return stream;
+    }
+
+    @Override
+    public InputStream getFlowOutput(String flowInstanceId, String outputName) {
+        FlowInstance instance = getFlowInstance(flowInstanceId);
+        FlowOutputRuntimeNode outputNode = instance.getExecutionGraph().getOutputNodes().stream()
+                .filter(node -> outputName.equals(((FlowOutput) node.getStaticGraphNode().getValue()).getName()))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException(String.format("Cannot find output %s for the specified flow.", outputName)));
+
+        if (outputNode.getValue() != null) {
+            String value = outputNode.getValue().getParts().stream()
+                    .findFirst()
+                    .map(part -> part.getValue())
+                    .orElse(null);
+            if (value != null) {
+                value = value.substring(value.indexOf(TASKS_PATH) + TASKS_PATH.length());
+                String[] parameters = value.split("/");
+                if (parameters.length == 2) {
+                    return getTaskOutput(parameters[0], parameters[1]);
+                }
+
+            }
+        }
+        throw new NotFoundException(String.format("Flow output %s for `flow instance %s is not available.", outputName, flowInstanceId));
     }
 
     @Override

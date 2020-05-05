@@ -1,3 +1,4 @@
+type: micropipe
 name: simple-consumer
 image: "simple-consumer:latest"
 inputMapping:
