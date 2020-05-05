@@ -17,8 +17,8 @@ public class S3Downloader {
 
     public static void main(String[] args) throws IOException {
         AWSCredentials credentials = new BasicAWSCredentials(
-                "AKIAW6BDIW7OTA2ZAJGG",
-                "GvHJDIxp7Zy1d2F216LUfWBwCo+2S/YXWw+DX9YF"
+                "AKIAW6BDIW7OUYFJHZ7P",
+                "6CPUU4mkUYAb5pYU3U9+DrF+sEYB4eoy1M40tVe7"
         );
 
         AmazonS3 s3client = AmazonS3ClientBuilder
