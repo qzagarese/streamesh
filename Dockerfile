@@ -5,7 +5,7 @@ COPY streamesh-docker-driver ./streamesh-docker-driver
 COPY streamesh-server ./streamesh-server
 
 WORKDIR /usr/streamesh-core
-RUN  mvn clean install
+RUN  mvn clean install -DskipTests=true
 
 WORKDIR /usr/streamesh-docker-driver
 RUN  mvn clean install
