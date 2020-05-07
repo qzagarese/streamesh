@@ -6,6 +6,8 @@ input:
   - name: manhattan-file
   - name: others-bucket
   - name: others-file
+  - name: accessKey
+  - name: secretKey
 
 
 output:

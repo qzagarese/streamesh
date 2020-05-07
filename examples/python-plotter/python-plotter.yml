@@ -7,7 +7,6 @@ inputMapping:
     - name: dataset
       internalName: --url
       optional: false
-      repeatable: true
 outputMapping:
   - name: plot
     outputDir: /tmp
